@@ -1,12 +1,13 @@
-<!-- Site v4: top-of-page hero now shows your real "website_top.jpg" photo from
-     Drive instead of the generated illustration. Change from v3 (only):
-     - CONFIG.heroImage set to your Drive photo link (edit or clear it to
-       revert to the illustration)
-     - hero markup/CSS updated to display a real photo full-bleed
-     - startup script now loads that photo, falling back to the illustration
-       automatically if it ever fails to load
-     Everything else (slidesEndpoint, filtering, catalog handling) is
-     untouched. -->
+<!-- Site v5: contact-email default + two leftover placeholder sentences
+     removed. Change from v4 (only):
+     - CONFIG.contactEmail set to 'admin@rugsroots.com' (was blank)
+     - Top banner text shortened to "Fine wool and silk rugs." (removed
+       "The collection updates as new pieces are added.")
+     - Removed the "Set CONFIG.contactEmail so messages go to your inbox."
+       placeholder hint under the contact form, and the JS line that
+       toggled it (no longer needed now that contactEmail is always set)
+     Everything else (hero image, slidesEndpoint, filtering, catalog
+     handling) is untouched. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -252,7 +253,7 @@ footer a:hover{text-decoration:underline}
 
 <body>
 
-<div class="announce" id="announce">Fine wool and silk rugs. The collection updates as new pieces are added.</div>
+<div class="announce" id="announce">Fine wool and silk rugs.</div>
 
 <header class="site-head">
   <div class="head-in">
@@ -353,7 +354,6 @@ footer a:hover{text-decoration:underline}
         <label>Email<input name="email" type="email" required autocomplete="email"></label>
         <label>Message<textarea name="message" required></textarea></label>
         <button class="btn" type="submit">Send message</button>
-        <p class="hint" id="mailHint" hidden>Set <code>CONFIG.contactEmail</code> so messages go to your inbox.</p>
       </form>
     </div>
   </section>
@@ -417,7 +417,7 @@ const CONFIG = {
   // generated illustration instead.
   heroImage: 'https://lh3.googleusercontent.com/d/1cRDTt0LN956Q8fXdKrQpaHab_cCrMTlJ=w1600',
 
-  contactEmail: '',       // e.g. 'hello@yourdomain.com'
+  contactEmail: 'admin@rugsroots.com',       // e.g. 'hello@yourdomain.com'
   whatsappNumber: ''      // digits only, with country code, e.g. '14155550123'
 };
 
@@ -990,7 +990,6 @@ $('contactForm').addEventListener('submit', e => {
 $('brandName').textContent = $('footBrand').textContent = $('legalBrand').textContent = CONFIG.brand;
 document.title = CONFIG.brand + ' | Fine wool and silk rugs';
 $('year').textContent = new Date().getFullYear();
-$('mailHint').hidden = !!CONFIG.contactEmail;
 (function setHeroImage() {
   const floor = $('heroFloor');
   const rug = $('heroRug');
