@@ -1,13 +1,19 @@
-<!-- Site v5: contact-email default + two leftover placeholder sentences
-     removed. Change from v4 (only):
-     - CONFIG.contactEmail set to 'admin@rugsroots.com' (was blank)
-     - Top banner text shortened to "Fine wool and silk rugs." (removed
-       "The collection updates as new pieces are added.")
-     - Removed the "Set CONFIG.contactEmail so messages go to your inbox."
-       placeholder hint under the contact form, and the JS line that
-       toggled it (no longer needed now that contactEmail is always set)
-     Everything else (hero image, slidesEndpoint, filtering, catalog
-     handling) is untouched. -->
+<!-- Site v6: new "room styling" popup offer. Change from v5 (only):
+     - Added a new dialog (#roomOffer) asking visitors to describe their
+       room and any rug codes they like, so the team can email back
+       matching options within 24 hours
+     - It first opens once a visitor scrolls into the collection, then
+       re-opens about once a minute (max 3 times total per visit) until
+       they submit it or the cap is hit
+     - Submitting sends a mailto: to CONFIG.contactEmail, same pattern as
+       the existing contact form, and the popup never reappears again on
+       that device once submitted (localStorage flag)
+     - Generalized the dialog "close" click handler (data-close) to close
+       whichever dialog it's inside, instead of always closing #detail,
+       so both dialogs share it; added a click-outside-to-close handler
+       for the new dialog matching the existing one on #detail
+     Everything else (hero image, contact email, slidesEndpoint,
+     filtering, catalog handling) is untouched. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -223,6 +229,16 @@ dialog.detail::backdrop{background:rgba(20,27,45,.58)}
 @media (max-width:760px){.detail-in{grid-template-columns:1fr}.detail-body{padding:28px 22px}.detail-body h2{font-size:1.9rem}}
 
 /* =========================================================
+   7b. ROOM STYLING OFFER POPUP
+   ========================================================= */
+dialog.offer{width:min(460px,92vw);padding:0;border:0;border-radius:2px;background:var(--surface);color:var(--ink);overflow:auto}
+dialog.offer::backdrop{background:rgba(20,27,45,.58)}
+.offer-body{padding:40px 32px 32px}
+.offer-body h2{font-size:1.55rem;margin-bottom:10px;padding-right:28px}
+.offer-body p{color:var(--ink-2);margin-bottom:22px}
+@media (max-width:520px){.offer-body{padding:32px 22px 26px}}
+
+/* =========================================================
    8. CONTACT + FOOTER
    ========================================================= */
 .contact{background:var(--surface);border-top:1px solid var(--line);padding:80px 0}
@@ -388,6 +404,21 @@ footer a:hover{text-decoration:underline}
 
 <div class="scrim" id="scrim" hidden></div>
 <dialog class="detail" id="detail" aria-label="Rug details"></dialog>
+
+<dialog class="offer" id="roomOffer" aria-label="Get help choosing a rug">
+  <button type="button" class="close" data-close aria-label="Close">×</button>
+  <div class="offer-body">
+    <h2>Not sure which rug fits your room?</h2>
+    <p>Tell us about the room and any rug codes you like &mdash; we will put together options and email them back to you within 24 hours.</p>
+    <form class="form" id="offerForm">
+      <label>Your name<input name="name" autocomplete="name"></label>
+      <label>Email<input name="email" type="email" required autocomplete="email"></label>
+      <label>Tell us about the room<textarea name="room" required placeholder="e.g. a 10x13 living room, warm wood floors, mostly neutral furniture"></textarea></label>
+      <label>Rug codes you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
+      <button class="btn" type="submit">Send request</button>
+    </form>
+  </div>
+</dialog>
 
 <noscript><p style="padding:24px;text-align:center">Please turn on JavaScript to browse the collection.</p></noscript>
 
@@ -928,7 +959,7 @@ document.addEventListener('click', e => {
 
   if (t.dataset.open) return openDetail(t.dataset.open);
   if (t.dataset.save) return toggleSave(t.dataset.save);
-  if (t.hasAttribute('data-close')) return $('detail').close();
+  if (t.hasAttribute('data-close')) return t.closest('dialog')?.close();
   if (t.dataset.thumb != null) {
     const p = byId.get($('detail').dataset.pid);
     $('detailMain').innerHTML = mediaHTML(p, +t.dataset.thumb);
@@ -968,6 +999,7 @@ $('openFilters').addEventListener('click', () => openFilters(true));
 document.addEventListener('keydown', e => { if (e.key === 'Escape') openFilters(false); });
 
 $('detail').addEventListener('click', e => { if (e.target === $('detail')) $('detail').close(); });
+$('roomOffer').addEventListener('click', e => { if (e.target === $('roomOffer')) $('roomOffer').close(); });
 
 // If a photo fails to load, show the placeholder artwork instead
 document.addEventListener('error', e => {
@@ -983,6 +1015,53 @@ $('contactForm').addEventListener('submit', e => {
   const body = `${f.get('message')}\n\nFrom: ${f.get('name')} (${f.get('email')})`;
   location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Message from ' + f.get('name'))}&body=${encodeURIComponent(body)}`;
 });
+
+/* =========================================================
+   Room styling offer popup: shows once the visitor has scrolled
+   into the collection, then re-offers up to 3 times total (about
+   a minute apart) until they submit it or the cap is reached.
+   ========================================================= */
+(function roomOfferPopup() {
+  const dlg = $('roomOffer');
+  const MAX_PROMPTS = 3;
+  const REPEAT_MS = 60000;
+  let shownCount = 0;
+  let repromptTimer = null;
+  let triggered = false;
+
+  const isDone = () => { try { return localStorage.getItem('rr_offer_done') === '1'; } catch (e) { return false; } };
+  const markDone = () => { try { localStorage.setItem('rr_offer_done', '1'); } catch (e) {} };
+
+  function openOffer() {
+    if (isDone() || shownCount >= MAX_PROMPTS || dlg.open) return;
+    shownCount++;
+    dlg.showModal();
+  }
+
+  dlg.addEventListener('close', () => {
+    if (isDone() || shownCount >= MAX_PROMPTS) return;
+    clearTimeout(repromptTimer);
+    repromptTimer = setTimeout(openOffer, REPEAT_MS);
+  });
+
+  $('offerForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const body = `Room: ${f.get('room')}\nRug codes I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
+    location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Rug styling request')}&body=${encodeURIComponent(body)}`;
+    markDone();
+    clearTimeout(repromptTimer);
+    dlg.close();
+  });
+
+  window.addEventListener('scroll', () => {
+    if (triggered || isDone()) return;
+    if (window.scrollY > window.innerHeight * 0.6) {
+      triggered = true;
+      openOffer();
+    }
+  }, { passive: true });
+})();
 
 /* =========================================================
    Start
