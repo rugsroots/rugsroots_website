@@ -1,9 +1,13 @@
-<!-- Site v9: header button line break. Change from v8 (only):
-     - Added a <br> inside the header button so it always reads "Find the
-       perfect rug" on line one and "for your house" on line two, instead
-       of wrapping wherever the browser happens to break it
-     Everything else (the dialog it opens, hero image, contact email,
-     slidesEndpoint, filtering, catalog handling) is untouched. -->
+<!-- Site v11: added an About us page. Change from v10 (only):
+     - New "About us" link under Help in the footer (listed first, before
+       Contact us and Return policy), opening a new dialog (#aboutUs)
+       with your full "Our Story" text
+     - Reuses the same .policy dialog styling as the v10 Return policy
+       page, plus one small addition: a .tagline style (italic) for the
+       closing line "Rooted in heritage. Curated for today."
+     Everything else (Return policy page, header button, hero image,
+     contact email, slidesEndpoint, filtering, catalog handling) is
+     untouched. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -233,6 +237,20 @@ dialog.offer::backdrop{background:rgba(20,27,45,.58)}
 @media (max-width:520px){.offer-body{padding:32px 22px 26px}}
 
 /* =========================================================
+   7c. RETURN POLICY DIALOG
+   ========================================================= */
+dialog.policy{width:min(720px,94vw);max-height:92vh;padding:0;border:0;border-radius:2px;background:var(--surface);color:var(--ink);overflow:auto}
+dialog.policy::backdrop{background:rgba(20,27,45,.58)}
+.policy-body{padding:48px 44px 52px}
+.policy-body h2{font-size:1.9rem;margin-bottom:16px;padding-right:32px}
+.policy-body h3{font:600 1.05rem var(--sans);margin:30px 0 10px}
+.policy-body p{color:var(--ink-2);margin-bottom:14px;max-width:62ch}
+.policy-body ul{margin:8px 0 16px 22px;color:var(--ink-2)}
+.policy-body li{margin-bottom:6px}
+.policy-body p.tagline{font-style:italic;color:var(--ink);margin-top:24px}
+@media (max-width:620px){.policy-body{padding:34px 24px 40px}.policy-body h2{font-size:1.6rem}}
+
+/* =========================================================
    8. CONTACT + FOOTER
    ========================================================= */
 .contact{background:var(--surface);border-top:1px solid var(--line);padding:80px 0}
@@ -391,7 +409,9 @@ footer a:hover{text-decoration:underline}
       <div>
         <h3>Help</h3>
         <ul>
+          <li><a href="#" id="aboutUsLink">About us</a></li>
           <li><a href="#contact">Contact us</a></li>
+          <li><a href="#" id="returnPolicyLink">Return policy</a></li>
         </ul>
       </div>
     </div>
@@ -414,6 +434,58 @@ footer a:hover{text-decoration:underline}
       <label>Rug codes you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
       <button class="btn" type="submit">Send request</button>
     </form>
+  </div>
+</dialog>
+
+<dialog class="policy" id="returnPolicy" aria-label="Returns and exchanges policy">
+  <button type="button" class="close" data-close aria-label="Close">×</button>
+  <div class="policy-body">
+    <h2>Returns &amp; Exchanges</h2>
+    <p>We want you to feel confident when choosing a rug for your home. Because each Rugs &amp; Roots piece is carefully selected and handled, we kindly ask that returned rugs meet the conditions below.</p>
+
+    <h3>14-Day Returns</h3>
+    <p>Eligible rugs may be returned within 14 days of delivery.</p>
+    <p>To qualify for a return, the rug must be:</p>
+    <ul>
+      <li>Unused and in its original condition</li>
+      <li>Free from stains, dirt, pet hair, odors, or other signs of use</li>
+      <li>Unwashed, uncleaned, and unaltered</li>
+      <li>Securely packaged to prevent damage during return shipping</li>
+    </ul>
+    <p>Please contact us before shipping a return so we can provide return instructions. Returns sent without prior authorization may not be accepted.</p>
+
+    <h3>Return Shipping</h3>
+    <p>Return shipping costs are the responsibility of the customer. Original shipping, delivery, and handling charges, if applicable, are non-refundable.</p>
+    <p>We strongly recommend using a trackable and insured shipping service. Rugs &amp; Roots is not responsible for returns that are lost or damaged while being shipped back to us.</p>
+
+    <h3>Refunds</h3>
+    <p>Once your rug is received, it will be inspected to ensure it meets our return conditions.</p>
+    <p>Approved refunds will be issued to the original method of payment, less any applicable return shipping or non-refundable delivery charges.</p>
+    <p>Please allow several business days after inspection for your refund to be processed. Your bank or payment provider may require additional time for the refund to appear.</p>
+
+    <h3>Damaged or Incorrect Orders</h3>
+    <p>We carefully inspect our rugs before shipment. In the unlikely event that your rug arrives damaged or you receive an incorrect item, please contact us within 48 hours of delivery and include photographs of the rug, packaging, and any visible damage.</p>
+    <p>Please do not ship a damaged item back before contacting us. We will work with you to determine the appropriate solution.</p>
+
+    <h3>Final Sale &amp; Special Orders</h3>
+    <p>Items clearly marked Final Sale, as well as custom or special-order rugs, are not eligible for return unless they arrive damaged or incorrect.</p>
+  </div>
+</dialog>
+
+<dialog class="policy" id="aboutUs" aria-label="About Rugs &amp; Roots">
+  <button type="button" class="close" data-close aria-label="Close">×</button>
+  <div class="policy-body">
+    <h2>Our Story</h2>
+    <p>At Rugs &amp; Roots, our story began long before our name did.</p>
+    <p>For more than 50 years, our family has been part of the rug industry, building trusted relationships with producers, carefully sourcing exceptional pieces, and exporting rugs from the Middle East to Europe and the United States.</p>
+    <p>Over generations, we have developed a deep understanding of what makes a remarkable rug&mdash;from the quality of its fibers and craftsmanship to its texture, construction, color harmony, and design.</p>
+    <p>Today, Rugs &amp; Roots carries that experience forward.</p>
+    <p>We work closely with trusted producers and carefully handpick our collections based on decades of knowledge and experience. Every piece is considered for the quality of its materials, craftsmanship, colors, design, and the way it can complement a beautifully designed home.</p>
+    <p>Our collections include carefully selected silk and wool rugs, bringing together the rich heritage of rug-making with designs suited to modern, transitional, and timeless interiors.</p>
+    <p>The name Rugs &amp; Roots represents the heart of our story. Rugs are the craft our family has known for generations. Roots represent our heritage, our family history, and the knowledge passed down over more than half a century.</p>
+    <p>Today, we are proud to continue that tradition in the United States, offering thoughtfully curated rugs to homeowners, interior designers, collectors, and design professionals.</p>
+    <p>Because to us, a rug is more than something placed in a room. The right rug gives a space warmth and character&mdash;and over time, becomes part of the story of the home itself.</p>
+    <p class="tagline">Rooted in heritage. Curated for today.</p>
   </div>
 </dialog>
 
@@ -997,6 +1069,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') openFilters(
 
 $('detail').addEventListener('click', e => { if (e.target === $('detail')) $('detail').close(); });
 $('roomOffer').addEventListener('click', e => { if (e.target === $('roomOffer')) $('roomOffer').close(); });
+$('returnPolicy').addEventListener('click', e => { if (e.target === $('returnPolicy')) $('returnPolicy').close(); });
+$('returnPolicyLink').addEventListener('click', e => { e.preventDefault(); $('returnPolicy').showModal(); });
+$('aboutUs').addEventListener('click', e => { if (e.target === $('aboutUs')) $('aboutUs').close(); });
+$('aboutUsLink').addEventListener('click', e => { e.preventDefault(); $('aboutUs').showModal(); });
 
 // If a photo fails to load, show the placeholder artwork instead
 document.addEventListener('error', e => {
