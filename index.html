@@ -1,19 +1,9 @@
-<!-- Site v6: new "room styling" popup offer. Change from v5 (only):
-     - Added a new dialog (#roomOffer) asking visitors to describe their
-       room and any rug codes they like, so the team can email back
-       matching options within 24 hours
-     - It first opens once a visitor scrolls into the collection, then
-       re-opens about once a minute (max 3 times total per visit) until
-       they submit it or the cap is hit
-     - Submitting sends a mailto: to CONFIG.contactEmail, same pattern as
-       the existing contact form, and the popup never reappears again on
-       that device once submitted (localStorage flag)
-     - Generalized the dialog "close" click handler (data-close) to close
-       whichever dialog it's inside, instead of always closing #detail,
-       so both dialogs share it; added a click-outside-to-close handler
-       for the new dialog matching the existing one on #detail
-     Everything else (hero image, contact email, slidesEndpoint,
-     filtering, catalog handling) is untouched. -->
+<!-- Site v9: header button line break. Change from v8 (only):
+     - Added a <br> inside the header button so it always reads "Find the
+       perfect rug" on line one and "for your house" on line two, instead
+       of wrapping wherever the browser happens to break it
+     Everything else (the dialog it opens, hero image, contact email,
+     slidesEndpoint, filtering, catalog handling) is untouched. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -75,12 +65,16 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
 .nav{display:flex;gap:30px}
 .nav a{text-decoration:none;font-size:.95rem;padding:6px 0;border-bottom:1px solid transparent}
 .nav a:hover{border-color:var(--ink)}
-.saved-btn{justify-self:end;display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:8px 4px;font-size:.95rem}
+.head-actions{justify-self:end;display:flex;align-items:center;gap:16px}
+.offer-btn{padding:9px 16px;border:1px solid var(--ink);border-radius:2px;background:transparent;color:var(--ink);font-size:.86rem;text-align:center;max-width:180px;line-height:1.25}
+.offer-btn:hover{background:var(--ink);color:var(--paper)}
+.saved-btn{display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:8px 4px;font-size:.95rem}
 .saved-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5}
 .saved-btn[aria-pressed="true"] svg{fill:var(--madder);stroke:var(--madder)}
 @media (max-width:820px){
   .head-in{grid-template-columns:1fr auto;padding:12px 18px}
   .nav{grid-column:1/-1;order:3;overflow-x:auto;gap:22px;padding-bottom:2px}
+  .offer-btn{padding:8px 12px;font-size:.8rem}
   html{scroll-padding-top:120px}
 }
 
@@ -281,10 +275,13 @@ footer a:hover{text-decoration:underline}
       <a href="#browse-material">Materials</a>
       <a href="#contact">Contact</a>
     </nav>
-    <button class="saved-btn" id="savedBtn" type="button" aria-pressed="false">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
-      <span>Saved <span id="savedCount">0</span></span>
-    </button>
+    <div class="head-actions">
+      <button class="offer-btn" id="offerBtn" type="button">Find the perfect rug<br>for your house</button>
+      <button class="saved-btn" id="savedBtn" type="button" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
+        <span>Saved <span id="savedCount">0</span></span>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -1017,50 +1014,21 @@ $('contactForm').addEventListener('submit', e => {
 });
 
 /* =========================================================
-   Room styling offer popup: shows once the visitor has scrolled
-   into the collection, then re-offers up to 3 times total (about
-   a minute apart) until they submit it or the cap is reached.
+   Room styling offer: opened from the "Get help choosing" header
+   button (no longer an automatic popup).
    ========================================================= */
-(function roomOfferPopup() {
+(function roomOfferDialog() {
   const dlg = $('roomOffer');
-  const MAX_PROMPTS = 3;
-  const REPEAT_MS = 60000;
-  let shownCount = 0;
-  let repromptTimer = null;
-  let triggered = false;
 
-  const isDone = () => { try { return localStorage.getItem('rr_offer_done') === '1'; } catch (e) { return false; } };
-  const markDone = () => { try { localStorage.setItem('rr_offer_done', '1'); } catch (e) {} };
-
-  function openOffer() {
-    if (isDone() || shownCount >= MAX_PROMPTS || dlg.open) return;
-    shownCount++;
-    dlg.showModal();
-  }
-
-  dlg.addEventListener('close', () => {
-    if (isDone() || shownCount >= MAX_PROMPTS) return;
-    clearTimeout(repromptTimer);
-    repromptTimer = setTimeout(openOffer, REPEAT_MS);
-  });
+  $('offerBtn').addEventListener('click', () => dlg.showModal());
 
   $('offerForm').addEventListener('submit', e => {
     e.preventDefault();
     const f = new FormData(e.target);
     const body = `Room: ${f.get('room')}\nRug codes I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
     location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Rug styling request')}&body=${encodeURIComponent(body)}`;
-    markDone();
-    clearTimeout(repromptTimer);
     dlg.close();
   });
-
-  window.addEventListener('scroll', () => {
-    if (triggered || isDone()) return;
-    if (window.scrollY > window.innerHeight * 0.6) {
-      triggered = true;
-      openOffer();
-    }
-  }, { passive: true });
 })();
 
 /* =========================================================
