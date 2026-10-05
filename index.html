@@ -668,6 +668,32 @@ function areaOf(p) {
   return p.category === 'Round' ? Math.PI * Math.pow(p.dims.w / 2, 2) : p.dims.w * p.dims.l;
 }
 
+// Pulls a short "W x L unit" out of the raw size text (which usually has
+// both metric and imperial, like "3 x 2 (sqm) - 9.8 x 6.6 (sqft)"),
+// preferring whichever unit CONFIG.sizeUnit is set to.
+function shortSize_(raw) {
+  const text = String(raw.size || '').trim();
+  if (!text) return '';
+  const wantFt = CONFIG.sizeUnit !== 'm';
+  const re = new RegExp('([\\d.]+\\s*x\\s*[\\d.]+)\\s*\\(' + (wantFt ? 'sqft' : 'sqm') + '\\)', 'i');
+  const m = text.match(re);
+  if (m) return m[1].replace(/\s+/g, ' ').trim() + (wantFt ? ' ft' : ' m');
+  const any = text.match(/([\d.]+\s*x\s*[\d.]+)/i);
+  return any ? any[1].replace(/\s+/g, ' ').trim() : '';
+}
+
+// When a slide has no explicit name, build one from color + material + size
+// instead of just "Rug <sku>" — used for card titles, the detail page,
+// and what Snipcart shows in the cart and on the invoice.
+function fallbackName_(raw) {
+  const bits = [String(raw.color || '').trim(), String(raw.material || '').trim()].filter(Boolean);
+  let base = bits.length ? bits.join(' ') + ' Rug' : 'Rug';
+  const size = shortSize_(raw);
+  if (size) base += ', ' + size;
+  const sku = String(raw.sku || '').trim();
+  return sku ? base + ' (No. ' + sku + ')' : base;
+}
+
 function normalize(raw, index) {
   let sizeText = String(raw.size || '').trim();
   if (!/\d/.test(sizeText)) sizeText = '';                                   // e.g. "no info"
@@ -678,7 +704,7 @@ function normalize(raw, index) {
   else if (/runner/i.test(shapeRaw + ' ' + sizeText)) shape = 'runner';
   const p = {
     id: String(raw.id != null ? raw.id : 'p' + index),
-    name: String(raw.name && !/:\s*$/.test(raw.name) ? raw.name : (raw.sku ? 'Rug ' + raw.sku : 'Untitled rug')).trim(),
+    name: String(raw.name && !/:\s*$/.test(raw.name) ? raw.name : fallbackName_(raw)).trim(),
     sizeText,
     shapeText: shapeRaw,
     shape,
