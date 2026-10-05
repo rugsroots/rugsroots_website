@@ -1,25 +1,20 @@
-<!-- Site v12: Snipcart checkout added (TEST mode). Change from v11 (only):
-     - Added the Snipcart loader script (your public TEST API key) right
-       before </body>, with currency set to 'usd' to match CONFIG.currency
-     - Added a Cart button in the header (next to Saved), using Snipcart's
-       built-in snipcart-checkout / snipcart-items-count classes
-     - Added a new cartButton(p) helper: renders an "Add to cart" button
-       whenever a rug has a real price and isn't sold. Wired into the rug
-       detail dialog, before the existing Inquire/WhatsApp buttons
-     - Each rug is treated as a one-of-a-kind piece: quantity is fixed at
-       1 and capped at 1 per order (data-item-quantity / max-quantity)
-     - Per the "simple version" choice: no server-side price-validation
-       endpoint yet. Snipcart is pointed at the rug's own page URL via
-       data-item-url, but since this is a single JS-rendered page rather
-       than one static page per rug, Snipcart can't crawl-verify the
-       price — it trusts the price shown at checkout. Fine for now since
-       every order is still reviewed by hand before shipping; worth
-       revisiting once sales volume grows
-     - Still using the TEST public API key, so no real charges can occur
-       yet. Swap in the LIVE key (same spot) when ready to go live
-     Everything else (About us / Return policy pages, header "Find the
-     perfect rug" button, hero image, contact email, slidesEndpoint,
-     filtering, catalog handling) is untouched. -->
+<!-- Site v13: fixed checkout failing with "URL of some products could not
+     be reached". Change from v12 (only):
+     - Turns out Snipcart's price check is mandatory, not optional — it
+       blocked checkout entirely rather than quietly trusting the price,
+       because the "Add to cart" button only exists inside a popup, so
+       there was no page for Snipcart to find it on
+     - cartButton(p)'s data-item-url now points at the Apps Script's new
+       price-check endpoint (?product=<rug id>, added in Script v6)
+       instead of the page itself, so Snipcart gets a real server-checked
+       price for every rug
+     - Requires Script v6 to be deployed (see slides-to-json.gs) AND your
+       domain (rugsroots.com) added under Snipcart Dashboard -> Store
+       configurations -> Domains & URLs — both are needed for checkout to
+       work, not just this file
+     Everything else (cart button, header, About us / Return policy
+     pages, hero image, contact email, filtering, catalog handling) is
+     untouched. -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -842,7 +837,12 @@ function cartButton(p) {
   // Only shown when a rug has a real price and isn't sold. Each rug is a
   // one-of-a-kind piece, so quantity is fixed at 1.
   if (p.price == null || p.sold) return '';
-  const url = location.origin + location.pathname;
+  // Points at the Apps Script's price-check endpoint (not this page) so
+  // Snipcart can confirm the real price server-side before charging —
+  // see productJson_() in slides-to-json.gs.
+  const url = CONFIG.slidesEndpoint
+    ? `${CONFIG.slidesEndpoint}?product=${encodeURIComponent(p.id)}`
+    : location.origin + location.pathname;
   return `<button type="button" class="btn snipcart-add-item"
     data-item-id="${esc(p.id)}"
     data-item-name="${esc(p.name)}"
