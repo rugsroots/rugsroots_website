@@ -738,6 +738,7 @@ function normalize(raw, index) {
     materialText: String(raw.material || '').trim(),
     materials: materialTokens(raw.material),
     price: parsePrice(raw.price),
+    weight: parsePrice(raw.weight),            // lb — from the slide's "Weight:" line, used for shipping quotes
     desc: String(raw.description || '').trim(),
     sku: String(raw.sku || '').trim(),
     status: String(raw.status || '').trim().toLowerCase(),
@@ -748,6 +749,10 @@ function normalize(raw, index) {
   p.category = sizeCategory(p);
   p.sold = /sold/i.test(p.status);
   p.hidden = /hidden|draft/i.test(p.status);
+  // Shorter side over 48in counts as oversized for shipping — matches the
+  // $40 handling fee the Apps Script's shipping-rate webhook applies.
+  // p.dims is already in feet (the smaller side is .w), see parseDims().
+  p.oversized = !!(p.dims && p.dims.w * 12 > 48);
   return p;
 }
 
@@ -893,12 +898,21 @@ function cartButton(p) {
   const url = CONFIG.slidesEndpoint
     ? `${CONFIG.slidesEndpoint}?product=${encodeURIComponent(p.id)}`
     : location.origin + location.pathname;
+  // data-item-weight feeds Snipcart's own cart-weight total, which the Apps
+  // Script's shipping-rate webhook reads back (order.totalWeight) — see
+  // shippingRate_() in slides-to-json.gs. The hidden "Oversized" custom
+  // field is how that same webhook knows to add the $40 handling fee,
+  // since Snipcart doesn't forward item dimensions on its own.
   return `<button type="button" class="btn snipcart-add-item"
     data-item-id="${esc(p.id)}"
     data-item-name="${esc(p.name)}"
     data-item-price="${p.price}"
     data-item-url="${esc(url)}"
     data-item-image="${esc(p.images[0] || '')}"
+    data-item-weight="${p.weight || 0}"
+    data-item-custom1-name="Oversized"
+    data-item-custom1-type="hidden"
+    data-item-custom1-value="${p.oversized ? 'yes' : 'no'}"
     data-item-quantity="1"
     data-item-max-quantity="1">Add to cart</button>`;
 }
@@ -914,7 +928,8 @@ function inquiryLinks(p) {
 function openDetail(id) {
   const p = byId.get(id);
   if (!p) return;
-  const rows = [['Size', p.sizeText], ['Material', p.materialText], ['Color', p.colorText], ['Shape', p.shapeText], ['SKU', p.sku]]
+  const rows = [['Size', p.sizeText], ['Material', p.materialText], ['Color', p.colorText], ['Shape', p.shapeText],
+    ['Weight', p.weight ? p.weight + ' lb' : ''], ['SKU', p.sku]]
     .concat(Object.entries(p.extra)).filter(([, v]) => v);
   const thumbs = p.images.length > 1
     ? `<div class="thumbs">${p.images.map((u, i) => `<button type="button" data-thumb="${i}" aria-label="Photo ${i + 1}" ${i === 0 ? 'aria-current="true"' : ''}><img src="${esc(u)}" alt=""></button>`).join('')}</div>` : '';
