@@ -706,19 +706,16 @@ function titleSize_(raw) {
 }
 
 // Product title template: "Luxury Silk Area Rug | Partially Hand-Knotted
-// Persian Medallion – <Color> - <W>x<L>ft", with the rug-type phrase
-// swapped to "Luxury Natural Wool & Silk Area Rug" when the slide's
-// Material line mentions wool. Replaces whatever name the slide has —
-// this is the one title shown everywhere (cards, detail page, cart, invoice).
+// Persian Medallion", with the rug-type phrase swapped to "Luxury Natural
+// Wool & Silk Area Rug" when the slide's Material line mentions wool.
+// No color or size in the title — those still show as badges under the
+// title on cards, and in the Material/Color/Size rows on the detail page.
+// Replaces whatever name the slide has — this is the one title shown
+// everywhere (cards, detail page, cart, invoice).
 function productTitle_(raw) {
   const isWool = /wool/i.test(String(raw.material || ''));
   const rugType = isWool ? 'Luxury Natural Wool & Silk Area Rug' : 'Luxury Silk Area Rug';
-  let title = rugType + ' | Partially Hand-Knotted Persian Medallion';
-  const color = String(raw.color || '').trim();
-  if (color) title += ' – ' + color;
-  const size = titleSize_(raw);
-  if (size) title += ' - ' + size;
-  return title;
+  return rugType + ' | Partially Hand-Knotted Persian Medallion';
 }
 
 function normalize(raw, index) {
@@ -872,7 +869,7 @@ function mediaHTML(p, index) {
 
 function cardHTML(p) {
   const on = saved.has(p.id);
-  const spec = [p.sizeText, p.materialText, p.colorText].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
+  const spec = [p.sizeText, p.colorText].filter(Boolean).map(t => `<span>${esc(t)}</span>`).join('');
   return `<article class="card">
     <div class="card-media">
       <button type="button" class="media-btn" data-open="${esc(p.id)}" aria-label="View ${esc(p.name)}">${mediaHTML(p)}</button>
