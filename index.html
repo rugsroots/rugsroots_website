@@ -437,12 +437,12 @@ footer a:hover{text-decoration:underline}
   <button type="button" class="close" data-close aria-label="Close">×</button>
   <div class="offer-body">
     <h2>Not sure which rug fits your room?</h2>
-    <p>Tell us about the room and any rug codes you like &mdash; we will put together options and email them back to you within 24 hours.</p>
+    <p>Tell us about the room and any SKUs you like &mdash; we will put together options and email them back to you within 24 hours.</p>
     <form class="form" id="offerForm">
       <label>Your name<input name="name" autocomplete="name"></label>
       <label>Email<input name="email" type="email" required autocomplete="email"></label>
       <label>Tell us about the room<textarea name="room" required placeholder="e.g. a 10x13 living room, warm wood floors, mostly neutral furniture"></textarea></label>
-      <label>Rug codes you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
+      <label>SKU(s) you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
       <button class="btn" type="submit">Send request</button>
     </form>
   </div>
@@ -694,6 +694,33 @@ function fallbackName_(raw) {
   return sku ? base + ' (No. ' + sku + ')' : base;
 }
 
+// "W x L" in feet, compact ("9.8x6.6ft"), for the SEO title template below.
+// Always feet, regardless of CONFIG.sizeUnit — the template calls for it.
+function titleSize_(raw) {
+  const text = String(raw.size || '').trim();
+  if (!text) return '';
+  const sqft = text.match(/([\d.]+)\s*x\s*([\d.]+)\s*\(sqft\)/i);
+  if (sqft) return `${sqft[1]}x${sqft[2]}ft`;
+  const any = text.match(/([\d.]+)\s*x\s*([\d.]+)/i);
+  return any ? `${any[1]}x${any[2]}ft` : '';
+}
+
+// Product title template: "Luxury Silk Area Rug | Partially Hand-Knotted
+// Persian Medallion – <Color> - <W>x<L>ft", with the rug-type phrase
+// swapped to "Luxury Natural Wool & Silk Area Rug" when the slide's
+// Material line mentions wool. Replaces whatever name the slide has —
+// this is the one title shown everywhere (cards, detail page, cart, invoice).
+function productTitle_(raw) {
+  const isWool = /wool/i.test(String(raw.material || ''));
+  const rugType = isWool ? 'Luxury Natural Wool & Silk Area Rug' : 'Luxury Silk Area Rug';
+  let title = rugType + ' | Partially Hand-Knotted Persian Medallion';
+  const color = String(raw.color || '').trim();
+  if (color) title += ' – ' + color;
+  const size = titleSize_(raw);
+  if (size) title += ' - ' + size;
+  return title;
+}
+
 function normalize(raw, index) {
   let sizeText = String(raw.size || '').trim();
   if (!/\d/.test(sizeText)) sizeText = '';                                   // e.g. "no info"
@@ -704,7 +731,7 @@ function normalize(raw, index) {
   else if (/runner/i.test(shapeRaw + ' ' + sizeText)) shape = 'runner';
   const p = {
     id: String(raw.id != null ? raw.id : 'p' + index),
-    name: String(raw.name && !/:\s*$/.test(raw.name) ? raw.name : fallbackName_(raw)).trim(),
+    name: String(productTitle_(raw) || (raw.name && !/:\s*$/.test(raw.name) ? raw.name : fallbackName_(raw))).trim(),
     sizeText,
     shapeText: shapeRaw,
     shape,
@@ -890,7 +917,7 @@ function inquiryLinks(p) {
 function openDetail(id) {
   const p = byId.get(id);
   if (!p) return;
-  const rows = [['Size', p.sizeText], ['Material', p.materialText], ['Color', p.colorText], ['Shape', p.shapeText], ['Rug code', p.sku]]
+  const rows = [['Size', p.sizeText], ['Material', p.materialText], ['Color', p.colorText], ['Shape', p.shapeText], ['SKU', p.sku]]
     .concat(Object.entries(p.extra)).filter(([, v]) => v);
   const thumbs = p.images.length > 1
     ? `<div class="thumbs">${p.images.map((u, i) => `<button type="button" data-thumb="${i}" aria-label="Photo ${i + 1}" ${i === 0 ? 'aria-current="true"' : ''}><img src="${esc(u)}" alt=""></button>`).join('')}</div>` : '';
@@ -903,8 +930,8 @@ function openDetail(id) {
       <div class="detail-body">
         <h2>${esc(p.name)}</h2>
         <p class="detail-price">${esc(priceText(p))}${p.sold ? ' (sold)' : ''}</p>
-        ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ''}
         <dl class="rows">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+        ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ''}
         <div class="detail-actions">${cartButton(p)}${inquiryLinks(p)}
           <button type="button" class="heart" data-save="${esc(p.id)}" aria-pressed="${on}">${HEART}<span>${on ? 'Saved' : 'Save'}</span></button>
         </div>
@@ -1158,7 +1185,7 @@ $('contactForm').addEventListener('submit', e => {
   $('offerForm').addEventListener('submit', e => {
     e.preventDefault();
     const f = new FormData(e.target);
-    const body = `Room: ${f.get('room')}\nRug codes I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
+    const body = `Room: ${f.get('room')}\nSKU(s) I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
     location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Rug styling request')}&body=${encodeURIComponent(body)}`;
     dlg.close();
   });
