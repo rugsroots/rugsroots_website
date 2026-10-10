@@ -243,6 +243,8 @@ dialog.offer::backdrop{background:rgba(20,27,45,.58)}
 .offer-body h2{font-size:1.55rem;margin-bottom:10px;padding-right:28px}
 .offer-body p{color:var(--ink-2);margin-bottom:22px}
 @media (max-width:520px){.offer-body{padding:32px 22px 26px}}
+.promo-status{margin-top:14px;margin-bottom:0;font-size:.92rem}
+.promo-status.err{color:var(--madder)}
 
 /* =========================================================
    7c. RETURN POLICY DIALOG
@@ -303,6 +305,7 @@ footer a:hover{text-decoration:underline}
     </nav>
     <div class="head-actions">
       <button class="offer-btn" id="offerBtn" type="button">Find the perfect rug<br>for your house</button>
+      <button class="offer-btn" id="promoBtn" type="button">50% OFF<br>for new buyers</button>
       <button class="saved-btn" id="savedBtn" type="button" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
         <span>Saved <span id="savedCount">0</span></span>
@@ -445,6 +448,19 @@ footer a:hover{text-decoration:underline}
       <label>Tell us about the room<textarea name="room" required placeholder="e.g. a 10x13 living room, warm wood floors, mostly neutral furniture"></textarea></label>
       <label>SKU(s) you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
       <button class="btn" type="submit">Send request</button>
+    </form>
+  </div>
+</dialog>
+
+<dialog class="offer" id="promoOffer" aria-label="New-buyer discount signup">
+  <button type="button" class="close" data-close aria-label="Close">×</button>
+  <div class="offer-body">
+    <h2>50% off for new buyers</h2>
+    <p>Enter your email and we'll send you a one-time promo code for 50% off your first rug.</p>
+    <form class="form" id="promoForm">
+      <label>Email<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
+      <button class="btn" type="submit">Send me the code</button>
+      <p class="promo-status" id="promoStatus" role="status" hidden></p>
     </form>
   </div>
 </dialog>
@@ -1216,6 +1232,66 @@ $('contactForm').addEventListener('submit', e => {
     const body = `Room: ${f.get('room')}\nSKU(s) I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
     location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Rug styling request')}&body=${encodeURIComponent(body)}`;
     dlg.close();
+  });
+})();
+
+/* =========================================================
+   New-buyer 50% off popup: shown once per browser (tracked in
+   localStorage, so it never nags a repeat visitor), then posts the
+   email to the Apps Script endpoint, which emails the promo code —
+   the code itself is never present in this page's source. The
+   matching discount must be created in Snipcart's own dashboard
+   (Store configuration → Discounts); this popup only collects the
+   email and tells the visitor to check their inbox.
+   ========================================================= */
+(function promoPopup() {
+  const dlg = $('promoOffer');
+  const form = $('promoForm');
+  const status = $('promoStatus');
+  const promoBtn = $('promoBtn');
+  const SEEN_KEY = 'rr_promo_seen';
+
+  if (!CONFIG.slidesEndpoint) return;
+
+  const markSeen = () => { try { localStorage.setItem(SEEN_KEY, '1'); } catch (err) { /* ignore */ } };
+  const alreadySeen = () => { try { return !!localStorage.getItem(SEEN_KEY); } catch (err) { return false; } };
+
+  // Auto-popup only fires once per browser. The "50% OFF" header button
+  // always works, even after the auto-popup has been seen/dismissed, so a
+  // visitor who missed or closed it can still get the code on demand.
+  if (!alreadySeen()) {
+    setTimeout(() => { if (!dlg.open) dlg.showModal(); }, 4000);
+  }
+  dlg.addEventListener('close', markSeen);
+  if (promoBtn) promoBtn.addEventListener('click', () => { if (!dlg.open) dlg.showModal(); });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = new FormData(form).get('email');
+    const btn = form.querySelector('button');
+    btn.disabled = true;
+    status.hidden = true;
+    try {
+      const res = await fetch(CONFIG.slidesEndpoint, {
+        method: 'POST',
+        // text/plain avoids a CORS preflight the Apps Script endpoint
+        // doesn't handle — it still reads this as JSON server-side.
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'subscribe', email })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'request failed');
+      status.textContent = 'Check your inbox — your code is on its way!';
+      status.className = 'promo-status';
+      status.hidden = false;
+      markSeen();
+      setTimeout(() => dlg.close(), 2500);
+    } catch (err) {
+      status.textContent = "Something went wrong — please try again, or email us directly.";
+      status.className = 'promo-status err';
+      status.hidden = false;
+      btn.disabled = false;
+    }
   });
 })();
 
