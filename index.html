@@ -189,6 +189,7 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
 .card-info .row{display:flex;justify-content:space-between;gap:16px;align-items:baseline}
 .card-info h3{font-size:1.28rem}
 .price{font-weight:500;white-space:nowrap}
+.sku-tag{font-size:.78em;font-weight:400;color:var(--ink-2)}
 .spec{display:flex;flex-wrap:wrap;gap:2px 16px;margin-top:6px;font-size:.88rem;color:var(--ink-2)}
 .note{grid-column:1/-1;padding:56px 0;text-align:center;color:var(--ink-2)}
 .note .btn{margin-top:18px}
@@ -718,6 +719,15 @@ function productTitle_(raw) {
   return rugType + ' | Partially Hand-Knotted Persian Medallion';
 }
 
+// On-site title markup: the SKU rendered smaller/muted after the main
+// title, so cards/detail stay readable while still showing the SKU that
+// distinguishes otherwise-identical titles. p.name (titleBase + SKU as
+// plain text) is what's used for Snipcart and search — this is display-only.
+function titleHTML_(p) {
+  const base = esc(p.titleBase || p.name);
+  return p.sku ? `${base} <span class="sku-tag">(SKU ${esc(p.sku)})</span>` : base;
+}
+
 function normalize(raw, index) {
   let sizeText = String(raw.size || '').trim();
   if (!/\d/.test(sizeText)) sizeText = '';                                   // e.g. "no info"
@@ -726,9 +736,15 @@ function normalize(raw, index) {
   let shape = 'rect';
   if (/round|circle|circular|diameter/i.test(shapeRaw + ' ' + sizeText)) shape = 'round';
   else if (/runner/i.test(shapeRaw + ' ' + sizeText)) shape = 'runner';
+  const sku = String(raw.sku || '').trim();
+  const titleBase = String(productTitle_(raw) || (raw.name && !/:\s*$/.test(raw.name) ? raw.name : fallbackName_(raw))).trim();
   const p = {
     id: String(raw.id != null ? raw.id : 'p' + index),
-    name: String(productTitle_(raw) || (raw.name && !/:\s*$/.test(raw.name) ? raw.name : fallbackName_(raw))).trim(),
+    // Full plain-text title + SKU — this is what Snipcart shows in the
+    // cart, checkout, and order/invoice, and what search matches against.
+    // (SKU alone isn't enough at checkout to tell two similar rugs apart.)
+    name: sku ? `${titleBase} (SKU ${sku})` : titleBase,
+    titleBase,                                  // title without the SKU, for on-site display (see titleHTML_)
     sizeText,
     shapeText: shapeRaw,
     shape,
@@ -740,7 +756,7 @@ function normalize(raw, index) {
     price: parsePrice(raw.price),
     weight: parsePrice(raw.weight),            // lb — from the slide's "Weight:" line, used for shipping quotes
     desc: String(raw.description || '').trim(),
-    sku: String(raw.sku || '').trim(),
+    sku,
     status: String(raw.status || '').trim().toLowerCase(),
     images: (Array.isArray(raw.images) ? raw.images : []).filter(u => /^https:\/\//i.test(u)),
     extra: raw.extra && typeof raw.extra === 'object' ? raw.extra : {},
@@ -882,7 +898,7 @@ function cardHTML(p) {
       <button type="button" class="heart" data-save="${esc(p.id)}" aria-pressed="${on}" aria-label="Save ${esc(p.name)}">${HEART}</button>
     </div>
     <div class="card-info">
-      <div class="row"><h3>${esc(p.name)}</h3><span class="price">${esc(priceText(p))}</span></div>
+      <div class="row"><h3>${titleHTML_(p)}</h3><span class="price">${esc(priceText(p))}</span></div>
       <p class="spec">${spec}</p>
     </div>
   </article>`;
@@ -940,7 +956,7 @@ function openDetail(id) {
     <div class="detail-in">
       <div class="detail-media"><div class="detail-main" id="detailMain">${mediaHTML(p)}</div>${thumbs}</div>
       <div class="detail-body">
-        <h2>${esc(p.name)}</h2>
+        <h2>${titleHTML_(p)}</h2>
         <p class="detail-price">${esc(priceText(p))}${p.sold ? ' (sold)' : ''}</p>
         <dl class="rows">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
         ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ''}
