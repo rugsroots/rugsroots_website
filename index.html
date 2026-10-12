@@ -105,11 +105,24 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
 .hero-floor.has-photo .hero-rug img{width:100%;height:100%;object-fit:cover;display:block}
 @keyframes unroll{to{clip-path:inset(0 0 0 0)}}
 @media (prefers-reduced-motion:reduce){.hero-rug{clip-path:none;animation:none}}
+
+/* Rotating photo carousel (used when CONFIG.heroImages has several photos):
+   a ring of cards in 3D space, spun continuously on both the Y axis (so
+   it reads as a turning carousel) and the Z axis (so it also tumbles),
+   one full 360° turn every 15s, looping forever. */
+.hero-floor.has-carousel{display:block;position:relative;padding:0;perspective:1400px;background:var(--stone)}
+.photo-ring{position:absolute;inset:0;transform-style:preserve-3d;animation:ringSpin 15s linear infinite}
+.photo-card{position:absolute;top:50%;left:50%;width:min(40%,220px);aspect-ratio:4/5;margin:calc(min(40%,220px)/-2) 0 0 calc(min(40%,220px)/-2);transform:rotateY(var(--angle,0deg)) translateZ(230px)}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.28)}
+@keyframes ringSpin{from{transform:rotateY(0deg) rotateZ(0deg)}to{transform:rotateY(360deg) rotateZ(360deg)}}
+@media (prefers-reduced-motion:reduce){.photo-ring{animation:none}}
 @media (max-width:820px){
   .hero{grid-template-columns:1fr;min-height:0}
   .hero-copy{padding:48px 22px}
   .hero-floor{padding:36px 16px}
   .hero-floor.has-photo{min-height:320px;padding:0}
+  .hero-floor.has-carousel{min-height:320px;padding:0}
+  .photo-card{width:min(34%,150px);margin:calc(min(34%,150px)/-2) 0 0 calc(min(34%,150px)/-2);transform:rotateY(var(--angle,0deg)) translateZ(150px)}
 }
 
 /* =========================================================
@@ -542,8 +555,13 @@ const CONFIG = {
   refreshSeconds: 120,
 
   // Picture shown at the very top of the site. Leave empty ('') to show the
-  // generated illustration instead.
+  // generated illustration instead. Ignored if heroImages below has 2+ URLs.
   heroImage: 'https://lh3.googleusercontent.com/d/1cRDTt0LN956Q8fXdKrQpaHab_cCrMTlJ=w1600',
+
+  // Optional: put 2-10 photo URLs here to show a rotating 3D carousel
+  // instead of a single static photo. Example with 10 photos:
+  // heroImages: ['https://...1.jpg', 'https://...2.jpg', ... up to 10],
+  heroImages: [],
 
   contactEmail: 'admin@rugsroots.com',       // e.g. 'hello@yourdomain.com'
   whatsappNumber: ''      // digits only, with country code, e.g. '14155550123'
@@ -1111,6 +1129,10 @@ async function refresh(first) {
   try {
     const data = await load();
     $('demoNote').hidden = !data.demo;
+    if (data.hero && !heroFromCatalog) {
+      heroFromCatalog = true; // only switch over once, so it doesn't rebuild/restart the carousel on every refresh
+      applyHero(data.hero.images, data.hero.image || CONFIG.heroImage);
+    }
     if (data.building && !data.products.length) {
       $('grid').innerHTML = '<p class="note">The collection is being prepared. Please check back in a few minutes.</p>';
       return;
@@ -1301,22 +1323,57 @@ $('contactForm').addEventListener('submit', e => {
 $('brandName').textContent = $('footBrand').textContent = $('legalBrand').textContent = CONFIG.brand;
 document.title = CONFIG.brand + ' | Fine wool and silk rugs';
 $('year').textContent = new Date().getFullYear();
-(function setHeroImage() {
+/* Renders the top-right hero visual: a rotating 3D photo carousel when 2+
+   photo URLs are given, a single static photo, or (if neither) a generated
+   illustration. Called once at load with CONFIG's fallback values, then
+   called again once the live catalog loads — the catalog's hero.images
+   (read straight from your Drive hero-photos folder by the Apps Script,
+   see HERO_IMAGES_FOLDER_ID in slides-to-json.gs) takes over automatically,
+   so you manage the hero photos just by adding/removing files in that
+   Drive folder rather than editing this page's config. */
+let heroFromCatalog = false;
+function applyHero(photosIn, singleUrl) {
   const floor = $('heroFloor');
   const rug = $('heroRug');
   const fallbackSVG = () => artSVG({ id: 'hero', name: 'Featured rug', colors: ['Blue', 'Ivory'], materials: ['Wool (+silk)'], dims: { w: 8, l: 10 }, category: 'Large', shape: 'rect', design: 0 });
-  if (CONFIG.heroImage) {
+  const photos = Array.isArray(photosIn) ? photosIn.filter(Boolean).slice(0, 16) : [];
+  floor.classList.remove('has-carousel', 'has-photo');
+
+  if (photos.length >= 2) {
+    // Rotating 3D carousel: each card is placed around a circle with
+    // rotateY(i * 360/n) translateZ(radius), then the whole ring spins
+    // on both Y and Z via the ringSpin CSS animation (15s, infinite).
+    floor.classList.add('has-carousel');
+    const n = photos.length;
+    rug.innerHTML = '';
+    const ring = document.createElement('div');
+    ring.className = 'photo-ring';
+    photos.forEach((url, i) => {
+      const card = document.createElement('div');
+      card.className = 'photo-card';
+      card.style.setProperty('--angle', (i * 360 / n) + 'deg');
+      const img = new Image();
+      img.loading = 'eager';
+      img.alt = CONFIG.brand + ' rug, photo ' + (i + 1);
+      img.src = url;
+      card.appendChild(img);
+      ring.appendChild(card);
+    });
+    rug.appendChild(ring);
+  } else if (singleUrl) {
     floor.classList.add('has-photo');
     const img = new Image();
     img.alt = CONFIG.brand + ' featured rug';
     img.onerror = () => { floor.classList.remove('has-photo'); rug.innerHTML = fallbackSVG(); };
-    img.src = CONFIG.heroImage;
+    img.src = singleUrl;
     rug.innerHTML = '';
     rug.appendChild(img);
   } else {
     rug.innerHTML = fallbackSVG();
   }
-})();
+}
+
+applyHero(CONFIG.heroImages, CONFIG.heroImage);
 
 refresh(true);
 if (CONFIG.slidesEndpoint) setInterval(() => { if (!document.hidden) refresh(false); }, Math.max(30, CONFIG.refreshSeconds) * 1000);
