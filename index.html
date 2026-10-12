@@ -80,6 +80,11 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
 .head-actions{justify-self:end;display:flex;align-items:center;gap:16px}
 .offer-btn{flex-shrink:0;width:152px;min-height:52px;display:flex;align-items:center;justify-content:center;padding:9px 12px;border:1px solid var(--ink);border-radius:2px;background:transparent;color:var(--ink);font-size:.86rem;text-align:center;line-height:1.25}
 .offer-btn:hover{background:var(--ink);color:var(--paper)}
+/* Two explicit text variants per button — desktop always 2 lines, mobile
+   always 3 lines — swapped by breakpoint below, instead of relying on
+   the browser to wrap long words at whatever point it finds, which was
+   producing a different, unpredictable line count per button. */
+.btn-mtext{display:none}
 .saved-btn,.cart-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:none;border:0;padding:8px 4px;font-size:.95rem;color:var(--ink)}
 .saved-btn svg,.cart-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5}
 .saved-btn[aria-pressed="true"] svg{fill:var(--madder);stroke:var(--madder)}
@@ -93,7 +98,9 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
   /* Fixed equal width/height so the two offer buttons always line up with
      each other, however their text wraps, instead of each shrink-wrapping
      to its own text length. */
-  .offer-btn{padding:7px 8px;font-size:.72rem;width:92px;min-height:46px}
+  .offer-btn{padding:7px 8px;font-size:.72rem;width:92px;min-height:58px}
+  .btn-dtext{display:none}
+  .btn-mtext{display:inline}
   /* Icon-only Saved/Cart on mobile — frees up the width the two offer
      buttons need to stay fixed-size without anything being squeezed
      (the actual misalignment cause: the row didn't fit, so items were
@@ -350,8 +357,14 @@ footer a:hover{text-decoration:underline}
       <a href="#contact">Contact</a>
     </nav>
     <div class="head-actions">
-      <button class="offer-btn" id="offerBtn" type="button">Get rug<br>styling help</button>
-      <button class="offer-btn" id="promoBtn" type="button">New customers<br>promo code</button>
+      <button class="offer-btn" id="offerBtn" type="button">
+        <span class="btn-dtext">Get rug<br>styling help</span>
+        <span class="btn-mtext">Get rug<br>styling<br>help</span>
+      </button>
+      <button class="offer-btn" id="promoBtn" type="button">
+        <span class="btn-dtext">New customers<br>promo code</span>
+        <span class="btn-mtext">New<br>customers<br>promo code</span>
+      </button>
       <button class="saved-btn" id="savedBtn" type="button" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
         <span>Saved <span id="savedCount">0</span></span>
