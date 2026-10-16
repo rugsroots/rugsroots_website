@@ -518,8 +518,8 @@ footer a:hover{text-decoration:underline}
 <dialog class="offer" id="promoOffer" aria-label="New-buyer discount signup">
   <button type="button" class="close" data-close aria-label="Close">×</button>
   <div class="offer-body">
-    <h2>50% off for new buyers</h2>
-    <p>Enter your email and we'll send you a one-time promo code for 50% off your first rug.</p>
+    <h2>30% off for new buyers</h2>
+    <p>Enter your email and we'll send you a one-time promo code for 30% off your first rug.</p>
     <form class="form" id="promoForm">
       <label>Email<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
       <button class="btn" type="submit">Send me the code</button>
@@ -1311,7 +1311,7 @@ $('contactForm').addEventListener('submit', e => {
 })();
 
 /* =========================================================
-   New-buyer 50% off popup: shown once per browser (tracked in
+   New-buyer 30% off popup: shown once per browser (tracked in
    localStorage, so it never nags a repeat visitor), then posts the
    email to the Apps Script endpoint, which emails the promo code —
    the code itself is never present in this page's source. The
@@ -1331,7 +1331,7 @@ $('contactForm').addEventListener('submit', e => {
   const markSeen = () => { try { localStorage.setItem(SEEN_KEY, '1'); } catch (err) { /* ignore */ } };
   const alreadySeen = () => { try { return !!localStorage.getItem(SEEN_KEY); } catch (err) { return false; } };
 
-  // Auto-popup only fires once per browser. The "50% OFF" header button
+  // Auto-popup only fires once per browser. The promo header button
   // always works, even after the auto-popup has been seen/dismissed, so a
   // visitor who missed or closed it can still get the code on demand.
   if (!alreadySeen()) {
