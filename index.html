@@ -22,6 +22,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rugs &amp; Roots | Fine wool and silk rugs</title>
 <meta name="description" content="Fine wool and silk rugs. Browse by size, color and material.">
+<link rel="canonical" href="https://rugsroots.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Rugs &amp; Roots">
+<meta property="og:title" content="Rugs &amp; Roots | Fine wool and silk rugs">
+<meta property="og:description" content="Fine wool and silk rugs. Browse by size, color and material.">
+<meta property="og:url" content="https://rugsroots.com/">
+<meta property="og:image" content="https://lh3.googleusercontent.com/d/1cRDTt0LN956Q8fXdKrQpaHab_cCrMTlJ=w1600">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Rugs &amp; Roots | Fine wool and silk rugs">
+<meta name="twitter:description" content="Fine wool and silk rugs. Browse by size, color and material.">
+<meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1cRDTt0LN956Q8fXdKrQpaHab_cCrMTlJ=w1600">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"Rugs & Roots","url":"https://rugsroots.com/","sameAs":["https://www.instagram.com/rugsroots"]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
@@ -279,6 +293,8 @@ dialog.detail::backdrop{background:rgba(20,27,45,.58)}
 .rows dt{color:var(--ink-2)}
 .rows dd{margin:0}
 .detail-actions{display:flex;flex-wrap:wrap;gap:12px}
+.detail-permalink{margin-top:10px;font-size:.84rem}
+.detail-permalink a{color:var(--ink-2)}
 .detail-actions .heart{position:static;width:auto;height:auto;padding:13px 20px;border:1px solid var(--ink);border-radius:2px;background:transparent;display:inline-flex;gap:10px;align-items:center}
 .close{position:absolute;top:12px;right:14px;width:40px;height:40px;border:0;background:rgba(251,250,248,.9);border-radius:50%;font-size:1.5rem;line-height:1;z-index:2}
 @media (max-width:760px){.detail-in{grid-template-columns:1fr}.detail-body{padding:28px 22px}.detail-body h2{font-size:1.9rem}}
@@ -812,6 +828,12 @@ function titleHTML_(p) {
   return p.sku ? `${base} <span class="sku-tag">(SKU ${esc(p.sku)})</span>` : base;
 }
 
+// Same slug rule used server-side (Apps Script) to name each rug's static
+// page — keep the two in sync or permalinks below will point at a 404.
+const slugify = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+const productSlug = p => slugify(p.titleBase) + '-' + slugify(p.sku || p.id);
+const productPageUrl = p => '/rugs/' + productSlug(p) + '.html';
+
 function normalize(raw, index) {
   let sizeText = String(raw.size || '').trim();
   if (!/\d/.test(sizeText)) sizeText = '';                                   // e.g. "no info"
@@ -821,7 +843,11 @@ function normalize(raw, index) {
   if (/round|circle|circular|diameter/i.test(shapeRaw + ' ' + sizeText)) shape = 'round';
   else if (/runner/i.test(shapeRaw + ' ' + sizeText)) shape = 'runner';
   const sku = String(raw.sku || '').trim();
-  const titleBase = String(productTitle_(raw) || (raw.name && !/:\s*$/.test(raw.name) ? raw.name : fallbackName_(raw))).trim();
+  // Title priority: a custom title typed on the slide (label "SEO Title",
+  // "Page Title" or "Custom Title") wins when present; otherwise the usual
+  // generated title. No slide has a custom title yet, so every rug's title
+  // stays exactly as it is today until one is added.
+  const titleBase = String(raw.customTitle || productTitle_(raw)).trim();
   const p = {
     id: String(raw.id != null ? raw.id : 'p' + index),
     // Full plain-text title + SKU — this is what Snipcart shows in the
@@ -1047,6 +1073,7 @@ function openDetail(id) {
         <div class="detail-actions">${cartButton(p)}${inquiryLinks(p)}
           <button type="button" class="heart" data-save="${esc(p.id)}" aria-pressed="${on}">${HEART}<span>${on ? 'Saved' : 'Save'}</span></button>
         </div>
+        <p class="detail-permalink"><a href="${esc(productPageUrl(p))}">View full page for this rug →</a></p>
       </div>
     </div>`;
   dlg.showModal();
