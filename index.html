@@ -97,6 +97,8 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
 .brand{font:500 1.75rem/1 var(--serif);text-decoration:none}
 .brand-word{display:inline}
 .nav{display:flex;gap:30px}
+@media (min-width:821px) and (max-width:1380px){.nav{gap:18px}.nav a{font-size:.88rem}.head-in{gap:12px;padding-left:20px;padding-right:20px}}
+@media (min-width:821px) and (max-width:1260px){.head-in{grid-template-columns:1fr auto}.nav{grid-column:1/-1;order:3;justify-content:center;overflow-x:auto}}
 .nav a{text-decoration:none;font-size:.95rem;padding:6px 0;border-bottom:1px solid transparent}
 .nav a:hover{border-color:var(--ink)}
 .head-actions{justify-self:end;display:flex;align-items:center;gap:16px}
@@ -295,7 +297,12 @@ dialog.detail::backdrop{background:rgba(20,27,45,.58)}
 .thumbs img{width:100%;height:100%;object-fit:cover}
 .detail-body{padding:44px 40px 36px}
 .detail-body h2{font-size:2.3rem;margin-bottom:8px;padding-right:40px}
-.detail-price{font-size:1.25rem;margin-bottom:22px}
+.detail-price{font-size:1.25rem;margin-bottom:6px}
+.price-was{color:var(--ink-2);font-weight:400;font-size:.9em;margin-right:4px}
+.price-now{color:var(--madder)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.hk-compare{font-size:.92rem;color:var(--ink-2);margin:0 0 22px}
+.hk-compare b{color:var(--ink);font-weight:600}
 .detail-body p.desc{color:var(--ink-2);margin-bottom:24px;max-width:46ch;white-space:pre-line}
 .rows{display:grid;grid-template-columns:auto 1fr;gap:10px 28px;margin-bottom:30px;padding:20px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:.95rem}
 .rows dt{color:var(--ink-2)}
@@ -316,8 +323,6 @@ dialog.offer::backdrop{background:rgba(20,27,45,.58)}
 .offer-body h2{font-size:1.55rem;margin-bottom:10px;padding-right:28px}
 .offer-body p{color:var(--ink-2);margin-bottom:22px}
 @media (max-width:520px){.offer-body{padding:32px 22px 26px}}
-.promo-status{margin-top:14px;margin-bottom:0;font-size:.92rem}
-.promo-status.err{color:var(--madder)}
 
 /* =========================================================
    7c. RETURN POLICY DIALOG
@@ -385,10 +390,6 @@ footer a:hover{text-decoration:underline}
       <button class="offer-btn" id="offerBtn" type="button">
         <span class="btn-dtext">Get rug<br>styling help</span>
         <span class="btn-mtext">Get rug<br>styling<br>help</span>
-      </button>
-      <button class="offer-btn" id="promoBtn" type="button">
-        <span class="btn-dtext">New customers<br>promo code</span>
-        <span class="btn-mtext">New<br>customers<br>promo code</span>
       </button>
       <button class="saved-btn" id="savedBtn" type="button" aria-pressed="false">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2Z"/></svg>
@@ -537,19 +538,6 @@ footer a:hover{text-decoration:underline}
       <label>Tell us about the room<textarea name="room" required placeholder="e.g. a 10x13 living room, warm wood floors, mostly neutral furniture"></textarea></label>
       <label>SKU(s) you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
       <button class="btn" type="submit">Send request</button>
-    </form>
-  </div>
-</dialog>
-
-<dialog class="offer" id="promoOffer" aria-label="New-buyer discount signup">
-  <button type="button" class="close" data-close aria-label="Close">×</button>
-  <div class="offer-body">
-    <h2>30% off for new buyers</h2>
-    <p>Enter your email and we'll send you a one-time promo code for 30% off your first rug.</p>
-    <form class="form" id="promoForm">
-      <label>Email<input name="email" type="email" required autocomplete="email" placeholder="you@example.com"></label>
-      <button class="btn" type="submit">Send me the code</button>
-      <p class="promo-status" id="promoStatus" role="status" hidden></p>
     </form>
   </div>
 </dialog>
@@ -874,6 +862,8 @@ function normalize(raw, index) {
     materialText: String(raw.material || '').trim(),
     materials: materialTokens(raw.material),
     price: parsePrice(raw.price),
+    wasPrice: parsePrice(raw.wasPrice),        // slide label "Was Price:" — shown crossed out only when higher than the price
+    hkPrice: parsePrice(raw.handKnottedPrice), // slide label "Hand Knotted Price:" — comparable hand-knotted rug value
     weight: parsePrice(raw.weight),            // lb — from the slide's "Weight:" line, used for shipping quotes
     desc: String(raw.description || '').trim(),
     sku,
@@ -998,6 +988,16 @@ try { saved = new Set(JSON.parse(localStorage.getItem('rr_saved') || '[]')); } c
 const persistSaved = () => { try { localStorage.setItem('rr_saved', JSON.stringify([...saved])); } catch (e) {} };
 
 const priceText = p => p.price == null ? 'Price on request' : fmt.format(p.price);
+// Price with an optional crossed-out "was" price. The was price only shows when
+// the slide has a real "Was Price:" that is higher than the current price.
+const priceHTML = p => {
+  const now = esc(priceText(p));
+  return (p.price != null && p.wasPrice != null && p.wasPrice > p.price)
+    ? `<s class="price-was"><span class="sr">Was </span>${esc(fmt.format(p.wasPrice))}</s> <span class="price-now">${now}</span>`
+    : now;
+};
+const hkHTML = p => (p.hkPrice != null && p.hkPrice > 0)
+  ? `<p class="hk-compare">Comparable hand-knotted rug: <b>${esc(fmt.format(p.hkPrice))}</b></p>` : '';
 
 /* =========================================================
    Rendering: media, cards, dialog
@@ -1018,7 +1018,7 @@ function cardHTML(p) {
       <button type="button" class="heart" data-save="${esc(p.id)}" aria-pressed="${on}" aria-label="Save ${esc(p.name)}">${HEART}</button>
     </div>
     <div class="card-info">
-      <div class="row"><h3>${titleHTML_(p)}</h3><span class="price">${esc(priceText(p))}</span></div>
+      <div class="row"><h3>${titleHTML_(p)}</h3><span class="price">${priceHTML(p)}</span></div>
       <p class="spec">${spec}</p>
     </div>
   </article>`;
@@ -1077,7 +1077,8 @@ function openDetail(id) {
       <div class="detail-media"><div class="detail-main" id="detailMain">${mediaHTML(p)}</div>${thumbs}</div>
       <div class="detail-body">
         <h2>${titleHTML_(p)}</h2>
-        <p class="detail-price">${esc(priceText(p))}${p.sold ? ' (sold)' : ''}</p>
+        <p class="detail-price">${priceHTML(p)}${p.sold ? ' (sold)' : ''}</p>
+        ${hkHTML(p)}
         <dl class="rows">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
         ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ''}
         <div class="detail-actions">${cartButton(p)}${inquiryLinks(p)}
@@ -1344,66 +1345,6 @@ $('contactForm').addEventListener('submit', e => {
     const body = `Room: ${f.get('room')}\nSKU(s) I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
     location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Rug styling request')}&body=${encodeURIComponent(body)}`;
     dlg.close();
-  });
-})();
-
-/* =========================================================
-   New-buyer 30% off popup: shown once per browser (tracked in
-   localStorage, so it never nags a repeat visitor), then posts the
-   email to the Apps Script endpoint, which emails the promo code —
-   the code itself is never present in this page's source. The
-   matching discount must be created in Snipcart's own dashboard
-   (Store configuration → Discounts); this popup only collects the
-   email and tells the visitor to check their inbox.
-   ========================================================= */
-(function promoPopup() {
-  const dlg = $('promoOffer');
-  const form = $('promoForm');
-  const status = $('promoStatus');
-  const promoBtn = $('promoBtn');
-  const SEEN_KEY = 'rr_promo_seen';
-
-  if (!CONFIG.slidesEndpoint) return;
-
-  const markSeen = () => { try { localStorage.setItem(SEEN_KEY, '1'); } catch (err) { /* ignore */ } };
-  const alreadySeen = () => { try { return !!localStorage.getItem(SEEN_KEY); } catch (err) { return false; } };
-
-  // Auto-popup only fires once per browser. The promo header button
-  // always works, even after the auto-popup has been seen/dismissed, so a
-  // visitor who missed or closed it can still get the code on demand.
-  if (!alreadySeen()) {
-    setTimeout(() => { if (!dlg.open) dlg.showModal(); }, 4000);
-  }
-  dlg.addEventListener('close', markSeen);
-  if (promoBtn) promoBtn.addEventListener('click', () => { if (!dlg.open) dlg.showModal(); });
-
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = new FormData(form).get('email');
-    const btn = form.querySelector('button');
-    btn.disabled = true;
-    status.hidden = true;
-    try {
-      const res = await fetch(CONFIG.slidesEndpoint, {
-        method: 'POST',
-        // text/plain avoids a CORS preflight the Apps Script endpoint
-        // doesn't handle — it still reads this as JSON server-side.
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'subscribe', email })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'request failed');
-      status.textContent = 'Check your inbox — your code is on its way!';
-      status.className = 'promo-status';
-      status.hidden = false;
-      markSeen();
-      setTimeout(() => dlg.close(), 2500);
-    } catch (err) {
-      status.textContent = "Something went wrong — please try again, or email us directly.";
-      status.className = 'promo-status err';
-      status.hidden = false;
-      btn.disabled = false;
-    }
   });
 })();
 
