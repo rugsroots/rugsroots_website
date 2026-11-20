@@ -20,7 +20,34 @@
 <meta name="twitter:description" content="Elegant Ivory White Faded Floral Modern Silk &amp; Wool Rug 5&#39;8&quot; x 8&#39;2&quot;, 2.5 x 1.73 (sqm) - 8.2 x 5.7 (sqft), art silk &amp; wool. One-of-a-kind, from Rugs &amp; Roots.">
 <meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1OQITa7B84SjE6sLDpF8dLdGfQvr9fkeH=w1000">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-TD13N7LY15"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TD13N7LY15');</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TD13N7LY15');gtag('config','AW-18568504479');</script>
+<script>window.RR_ADS={"purchase":"AW-18568504479/5q0uCNug_rsdEJ_Jk5ZF","inquiry":"AW-18568504479/pWKkCN38_rsdEJ_Jk5ZF"};(function(){
+  function g(){ if (window.gtag) window.gtag.apply(null, arguments); }
+  function ads(label, extra){ if (label) g('event', 'conversion', Object.assign({ send_to: label }, extra || {})); }
+  // Inquiry: any click on an email link ("Inquire about this rug", "Ask for a similar rug").
+  document.addEventListener('click', function(e){
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="mailto:"]') : null;
+    if (!a) return;
+    g('event', 'generate_lead', { currency: 'USD' });
+    ads(RR_ADS.inquiry);
+  });
+  // Cart + purchase, from Snipcart's own events (Snipcart loads on first interaction).
+  document.addEventListener('snipcart.ready', function(){
+    try {
+      Snipcart.events.on('item.added', function(item){
+        g('event', 'add_to_cart', { currency: 'USD', value: Number(item.price) || 0,
+          items: [{ item_id: item.id, item_name: item.name, price: Number(item.price) || 0, quantity: 1 }] });
+      });
+      Snipcart.events.on('order.completed', function(order){
+        var value = Number(order.finalGrandTotal || order.grandTotal || order.total) || 0;
+        var cur = String(order.currency || 'USD').toUpperCase();
+        var id = order.invoiceNumber || order.token;
+        g('event', 'purchase', { transaction_id: id, value: value, currency: cur });
+        ads(RR_ADS.purchase, { value: value, currency: cur, transaction_id: id });
+      });
+    } catch (err) { /* tracking must never break the shop */ }
+  });
+})();</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Elegant Ivory White Faded Floral Modern Silk & Wool Rug 5'8\" x 8'2\" (SKU 100330)","sku":"100330","description":"Elegant Ivory White Faded Floral Modern Silk & Wool Rug 5'8\" x 8'2\", 2.5 x 1.73 (sqm) - 8.2 x 5.7 (sqft), art silk & wool","image":["https://lh3.googleusercontent.com/d/1OQITa7B84SjE6sLDpF8dLdGfQvr9fkeH=w1000","https://lh3.googleusercontent.com/d/1K3_uCGFxz4_JZv8NbnYCl76yDkjU8o4y=w1000","https://lh3.googleusercontent.com/d/1LVC5aYMbodgHGWwIRMe8hgW87NmwEjBi=w1000"],"brand":{"@type":"Brand","name":"Rugs & Roots"},"offers":{"@type":"Offer","priceCurrency":"USD","price":750,"availability":"https://schema.org/InStock","url":"https://rugsroots.com/rugs/elegant-ivory-white-faded-floral-modern-silk-wool-rug-5-8-x--100330.html"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +65,7 @@
 <p class="price"><s class="was"><span class="sr">Was </span>$1,081</s> <span class="now">$750</span></p>
 <dl class="rows"><dt>Size</dt><dd>2.5 x 1.73 (sqm) - 8.2 x 5.7 (sqft)</dd><dt>Material</dt><dd>art silk &amp; wool</dd><dt>Color</dt><dd>beige white</dd><dt>Weight</dt><dd>35.5 lb</dd><dt>SKU</dt><dd>100330</dd><dt>barcode</dt><dd>30380</dd></dl>
 <p class="desc">Elevate your space with an innovative centerpiece that redefines traditional texture. While the market is flooded with standard, flat wool rugs, this exclusive Rugs &amp; Roots piece is meticulously woven from a rare blend of natural sheep wool and premium modal silk. This uncommon combination completely transforms the rug—the modal silk infuses the pile with an unmistakable, radiant sheen that catches the light beautifully from every angle, while the pure sheep wool provides a plush, highly durable foundation.</p>
-<button type="button" class="btn snipcart-add-item" data-item-id="h22a0006545dbcf4b_0_2045" data-item-name="Elegant Ivory White Faded Floral Modern Silk &amp; Wool Rug 5&#39;8&quot; x 8&#39;2&quot; (SKU 100330)" data-item-price="750" data-item-url="https://script.google.com/a/rugsroots.com/macros/s/AKfycbxkOx_ErOhWOKe3eq2uYWSvXIqRqfIWOJq9nmuQ6J2T3ub623x0/exec?product=h22a0006545dbcf4b_0_2045" data-item-image="https://lh3.googleusercontent.com/d/1OQITa7B84SjE6sLDpF8dLdGfQvr9fkeH=w1000" data-item-weight="35.5" data-item-custom1-name="Oversized" data-item-custom1-type="hidden" data-item-custom1-value="yes" data-item-quantity="1" data-item-max-quantity="1">Add to cart</button>
+<button type="button" class="btn snipcart-add-item" data-item-id="h22a0006545dbcf4b_0_2045" data-item-name="Elegant Ivory White Faded Floral Modern Silk &amp; Wool Rug 5&#39;8&quot; x 8&#39;2&quot; (SKU 100330)" data-item-price="750" data-item-url="https://script.google.com/a/rugsroots.com/macros/s/AKfycbxzwDHoIyp-TudSNruExE_Tm5U8zeb0vyO7XfJT-zG2/dev?product=h22a0006545dbcf4b_0_2045" data-item-image="https://lh3.googleusercontent.com/d/1OQITa7B84SjE6sLDpF8dLdGfQvr9fkeH=w1000" data-item-weight="35.5" data-item-custom1-name="Oversized" data-item-custom1-type="hidden" data-item-custom1-value="yes" data-item-quantity="1" data-item-max-quantity="1">Add to cart</button>
 </div>
 </div>
 </div>
