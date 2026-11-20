@@ -20,7 +20,34 @@
 <meta name="twitter:description" content="Elegant Beige and Gold Isfahan Medallion Persian Design Silk Rug 8&#39;2&quot; x 11&#39;6&quot;, 3.5 x 2.5 (sqm) - 11.5 x 8.2 (sqft), modal silk. One-of-a-kind, from Rugs &amp; Roots.">
 <meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1PoSoKR3prZZnE59OEUdD9yRPlSnE8MtO=w1000">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-TD13N7LY15"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TD13N7LY15');</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TD13N7LY15');gtag('config','AW-18568504479');</script>
+<script>window.RR_ADS={"purchase":"AW-18568504479/5q0uCNug_rsdEJ_Jk5ZF","inquiry":"AW-18568504479/pWKkCN38_rsdEJ_Jk5ZF"};(function(){
+  function g(){ if (window.gtag) window.gtag.apply(null, arguments); }
+  function ads(label, extra){ if (label) g('event', 'conversion', Object.assign({ send_to: label }, extra || {})); }
+  // Inquiry: any click on an email link ("Inquire about this rug", "Ask for a similar rug").
+  document.addEventListener('click', function(e){
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="mailto:"]') : null;
+    if (!a) return;
+    g('event', 'generate_lead', { currency: 'USD' });
+    ads(RR_ADS.inquiry);
+  });
+  // Cart + purchase, from Snipcart's own events (Snipcart loads on first interaction).
+  document.addEventListener('snipcart.ready', function(){
+    try {
+      Snipcart.events.on('item.added', function(item){
+        g('event', 'add_to_cart', { currency: 'USD', value: Number(item.price) || 0,
+          items: [{ item_id: item.id, item_name: item.name, price: Number(item.price) || 0, quantity: 1 }] });
+      });
+      Snipcart.events.on('order.completed', function(order){
+        var value = Number(order.finalGrandTotal || order.grandTotal || order.total) || 0;
+        var cur = String(order.currency || 'USD').toUpperCase();
+        var id = order.invoiceNumber || order.token;
+        g('event', 'purchase', { transaction_id: id, value: value, currency: cur });
+        ads(RR_ADS.purchase, { value: value, currency: cur, transaction_id: id });
+      });
+    } catch (err) { /* tracking must never break the shop */ }
+  });
+})();</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Elegant Beige and Gold Isfahan Medallion Persian Design Silk Rug 8'2\" x 11'6\" (SKU 100148)","sku":"100148","description":"Elegant Beige and Gold Isfahan Medallion Persian Design Silk Rug 8'2\" x 11'6\", 3.5 x 2.5 (sqm) - 11.5 x 8.2 (sqft), modal silk","image":["https://lh3.googleusercontent.com/d/1PoSoKR3prZZnE59OEUdD9yRPlSnE8MtO=w1000","https://lh3.googleusercontent.com/d/1N3PyXAUpkQUgWMIBBZDFsjtKPZSuSiwr=w1000","https://lh3.googleusercontent.com/d/1_bVpwTNGeUjJs2NTtQN483SS3hYl-NBG=w1000"],"brand":{"@type":"Brand","name":"Rugs & Roots"},"offers":{"@type":"Offer","priceCurrency":"USD","price":2400,"availability":"https://schema.org/InStock","url":"https://rugsroots.com/rugs/elegant-beige-and-gold-isfahan-medallion-persian-design-silk-100148.html"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,7 +66,7 @@
 <p class="hk">Comparable hand-knotted rug: <b>$34,200</b></p>
 <dl class="rows"><dt>Size</dt><dd>3.5 x 2.5 (sqm) - 11.5 x 8.2 (sqft)</dd><dt>Material</dt><dd>modal silk</dd><dt>Color</dt><dd>Beige</dd><dt>Weight</dt><dd>52.5 lb</dd><dt>SKU</dt><dd>100148</dd></dl>
 <p class="desc">Elevate your home with the timeless elegance of this Rugs &amp; Roots luxury modal silk area rug. What sets this piece apart in the market is its meticulous construction—it is partially hand-knotted by master artisans, a time-consuming process that results in a truly unique work of art with unmatched character. While most comparable rugs rely entirely on machine manufacturing, we have woven radiant modal silk into a dense, plush pile to create a subtle, elegant sheen you won&#39;t find anywhere else at this tier.</p>
-<button type="button" class="btn snipcart-add-item" data-item-id="h22a0006545dbcf4b_0_1614" data-item-name="Elegant Beige and Gold Isfahan Medallion Persian Design Silk Rug 8&#39;2&quot; x 11&#39;6&quot; (SKU 100148)" data-item-price="2400" data-item-url="https://script.google.com/a/rugsroots.com/macros/s/AKfycbxkOx_ErOhWOKe3eq2uYWSvXIqRqfIWOJq9nmuQ6J2T3ub623x0/exec?product=h22a0006545dbcf4b_0_1614" data-item-image="https://lh3.googleusercontent.com/d/1PoSoKR3prZZnE59OEUdD9yRPlSnE8MtO=w1000" data-item-weight="52.5" data-item-custom1-name="Oversized" data-item-custom1-type="hidden" data-item-custom1-value="yes" data-item-quantity="1" data-item-max-quantity="1">Add to cart</button>
+<button type="button" class="btn snipcart-add-item" data-item-id="h22a0006545dbcf4b_0_1614" data-item-name="Elegant Beige and Gold Isfahan Medallion Persian Design Silk Rug 8&#39;2&quot; x 11&#39;6&quot; (SKU 100148)" data-item-price="2400" data-item-url="https://script.google.com/a/rugsroots.com/macros/s/AKfycbxzwDHoIyp-TudSNruExE_Tm5U8zeb0vyO7XfJT-zG2/dev?product=h22a0006545dbcf4b_0_1614" data-item-image="https://lh3.googleusercontent.com/d/1PoSoKR3prZZnE59OEUdD9yRPlSnE8MtO=w1000" data-item-weight="52.5" data-item-custom1-name="Oversized" data-item-custom1-type="hidden" data-item-custom1-value="yes" data-item-quantity="1" data-item-max-quantity="1">Add to cart</button>
 </div>
 </div>
 </div>
