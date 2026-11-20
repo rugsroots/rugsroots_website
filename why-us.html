@@ -18,7 +18,34 @@
 <meta name="twitter:description" content="See how Rugs &amp; Roots hand-finished woven rugs compare with hand-knotted, hand-tufted, flatweave and fully automated rugs: construction, finishing, durability and price.">
 <meta name="twitter:image" content="https://lh3.googleusercontent.com/d/1tiBG3LXnzej-TxRSXJU7qoPc53CIRTOL=w1000">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-TD13N7LY15"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TD13N7LY15');</script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-TD13N7LY15');gtag('config','AW-18568504479');</script>
+<script>window.RR_ADS={"purchase":"AW-18568504479/5q0uCNug_rsdEJ_Jk5ZF","inquiry":"AW-18568504479/pWKkCN38_rsdEJ_Jk5ZF"};(function(){
+  function g(){ if (window.gtag) window.gtag.apply(null, arguments); }
+  function ads(label, extra){ if (label) g('event', 'conversion', Object.assign({ send_to: label }, extra || {})); }
+  // Inquiry: any click on an email link ("Inquire about this rug", "Ask for a similar rug").
+  document.addEventListener('click', function(e){
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="mailto:"]') : null;
+    if (!a) return;
+    g('event', 'generate_lead', { currency: 'USD' });
+    ads(RR_ADS.inquiry);
+  });
+  // Cart + purchase, from Snipcart's own events (Snipcart loads on first interaction).
+  document.addEventListener('snipcart.ready', function(){
+    try {
+      Snipcart.events.on('item.added', function(item){
+        g('event', 'add_to_cart', { currency: 'USD', value: Number(item.price) || 0,
+          items: [{ item_id: item.id, item_name: item.name, price: Number(item.price) || 0, quantity: 1 }] });
+      });
+      Snipcart.events.on('order.completed', function(order){
+        var value = Number(order.finalGrandTotal || order.grandTotal || order.total) || 0;
+        var cur = String(order.currency || 'USD').toUpperCase();
+        var id = order.invoiceNumber || order.token;
+        g('event', 'purchase', { transaction_id: id, value: value, currency: cur });
+        ads(RR_ADS.purchase, { value: value, currency: cur, transaction_id: id });
+      });
+    } catch (err) { /* tracking must never break the shop */ }
+  });
+})();</script>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"Why Rugs & Roots | Hand-finished woven rugs at a smarter premium","description":"See how Rugs & Roots hand-finished woven rugs compare with hand-knotted, hand-tufted, flatweave and fully automated rugs: construction, finishing, durability and price.","url":"https://rugsroots.com/why-us.html","isPartOf":{"@type":"WebSite","name":"Rugs & Roots","url":"https://rugsroots.com/"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
