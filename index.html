@@ -49,6 +49,8 @@ window.RR_ADS = { purchase: 'AW-18568504479/5q0uCNug_rsdEJ_Jk5ZF', inquiry: 'AW-
 (function(){
   function g(){ if (window.gtag) window.gtag.apply(null, arguments); }
   function ads(label, extra){ if (label) g('event', 'conversion', Object.assign({ send_to: label }, extra || {})); }
+  // Inquiry sent from the contact form or styling-help form (they open the mail app via script, not a link click).
+  window.rrLead = function(){ g('event', 'generate_lead', { currency: 'USD' }); ads(RR_ADS.inquiry); };
   // Inquiry: any click on an email link ("Inquire about this rug", "Ask for a similar rug").
   document.addEventListener('click', function(e){
     var a = e.target && e.target.closest ? e.target.closest('a[href^="mailto:"]') : null;
@@ -388,6 +390,11 @@ dialog.policy::backdrop{background:rgba(20,27,45,.58)}
 .form textarea{min-height:130px;resize:vertical}
 .form .btn{justify-self:start;cursor:pointer}
 .form .hint{font-size:.84rem;color:var(--ink-2)}
+.form .hint:empty{display:none}
+.form .hint.err{color:#9b2c2c}
+.form .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.form .thanks{padding:8px 0}
+.form .thanks h3{margin:0 0 6px}
 @media (max-width:820px){.contact-in{grid-template-columns:1fr;gap:32px}.contact{padding:56px 0}}
 
 footer{background:var(--ink);color:var(--paper);padding:56px 0 28px}
@@ -521,6 +528,8 @@ footer a:hover{text-decoration:underline}
         <label>Your name<input name="name" required autocomplete="name"></label>
         <label>Email<input name="email" type="email" required autocomplete="email"></label>
         <label>Message<textarea name="message" required></textarea></label>
+        <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <p class="hint" id="contactStatus" role="status" aria-live="polite"></p>
         <button class="btn" type="submit">Send message</button>
       </form>
     </div>
@@ -574,6 +583,10 @@ footer a:hover{text-decoration:underline}
       <label>Email<input name="email" type="email" required autocomplete="email"></label>
       <label>Tell us about the room<textarea name="room" required placeholder="e.g. a 10x13 living room, warm wood floors, mostly neutral furniture"></textarea></label>
       <label>SKU(s) you like (optional)<input name="codes" placeholder="e.g. 101, 118"></label>
+      <label>Photos of your room (required: 1 to 3)<input name="photos" type="file" accept="image/*" multiple required></label>
+      <p class="hint">A clear, well-lit photo of the room helps us choose. Photos are sent to us by email only.</p>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <p class="hint" id="offerStatus" role="status" aria-live="polite"></p>
       <button class="btn" type="submit">Send request</button>
     </form>
   </div>
@@ -1360,11 +1373,65 @@ document.addEventListener('error', e => {
   if (p && img.parentElement) img.outerHTML = artSVG(p);
 }, true);
 
-$('contactForm').addEventListener('submit', e => {
+/* Sends a message through the Apps Script web app (it emails admin@).
+   If that fails, falls back to opening the visitor's mail app. */
+async function sendInquiry(kind, fields, mailSubject, mailBody, photos) {
+  try {
+    const r = await fetch(CONFIG.slidesEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ eventName: 'contact.message', kind, photos: photos || [] }, fields))
+    });
+    const j = await r.json();
+    if (j && j.ok) { try { window.rrLead && window.rrLead(); } catch (e) {} return true; }
+  } catch (err) { /* fall through to email fallback */ }
+  location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
+  return false;
+}
+/* Shrinks a photo in the browser: keeps up to 2200px on the long side and
+   lowers JPEG quality only as far as needed to land near 600 KB. */
+const PHOTO_TARGET_BYTES = 600 * 1024;
+async function compressPhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('decode')); i.src = url; });
+    let maxSide = 2200, best = null;
+    for (let round = 0; round < 6; round++) {
+      const k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * k));
+      c.height = Math.max(1, Math.round(img.naturalHeight * k));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      for (const q of [0.88, 0.8, 0.72, 0.64]) {
+        const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', q));
+        if (!blob) continue;
+        best = blob;
+        if (blob.size <= PHOTO_TARGET_BYTES) return blob;
+      }
+      maxSide = Math.round(maxSide * 0.82);   // still too big: try smaller dimensions
+    }
+    return best;
+  } finally { URL.revokeObjectURL(url); }
+}
+function blobToBase64(blob) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
+}
+
+function thanksHTML(title, text) { return `<div class="thanks"><h3>${esc(title)}</h3><p>${esc(text)}</p></div>`; }
+
+$('contactForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const f = new FormData(e.target);
+  const form = e.target, btn = form.querySelector('button[type=submit]'), status = $('contactStatus');
+  const f = new FormData(form);
+  btn.disabled = true; btn.textContent = 'Sending…'; status.textContent = ''; status.classList.remove('err');
   const body = `${f.get('message')}\n\nFrom: ${f.get('name')} (${f.get('email')})`;
-  location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Message from ' + f.get('name'))}&body=${encodeURIComponent(body)}`;
+  const ok = await sendInquiry('contact',
+    { name: f.get('name'), email: f.get('email'), message: f.get('message'), website: f.get('website') },
+    'Message from ' + f.get('name'), body);
+  if (ok) form.innerHTML = thanksHTML('Thank you', 'Your message has been sent. We will reply by email soon.');
+  else { btn.disabled = false; btn.textContent = 'Send message'; status.classList.add('err'); status.textContent = 'We could not send that directly, so we opened your email app instead.'; }
 });
 
 /* =========================================================
@@ -1376,12 +1443,34 @@ $('contactForm').addEventListener('submit', e => {
 
   $('offerBtn').addEventListener('click', () => dlg.showModal());
 
-  $('offerForm').addEventListener('submit', e => {
+  const offerFormHTML = $('offerForm').innerHTML;
+  dlg.addEventListener('close', () => { $('offerForm').innerHTML = offerFormHTML; });
+  $('offerForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const f = new FormData(e.target);
+    const form = e.target, btn = form.querySelector('button[type=submit]'), status = $('offerStatus');
+    const f = new FormData(form);
+    const files = Array.from(form.querySelector('[name=photos]').files || []).filter(x => x.size);
+    const fail = msg => { btn.disabled = false; btn.textContent = 'Send request'; status.classList.add('err'); status.textContent = msg; };
+    status.textContent = ''; status.classList.remove('err');
+    if (files.length < 1) return fail('Please add at least one photo of your room.');
+    if (files.length > 3) return fail('Please choose up to 3 photos.');
+    btn.disabled = true; btn.textContent = 'Preparing photos…';
+    let photos;
+    try {
+      photos = [];
+      for (let i = 0; i < files.length; i++) {
+        const blob = await compressPhoto(files[i]);
+        if (!blob) throw new Error('compress');
+        photos.push({ name: 'room-photo-' + (i + 1) + '.jpg', data: await blobToBase64(blob) });
+      }
+    } catch (err) { return fail('We could not read one of the photos. Please try a JPG or PNG image.'); }
+    btn.textContent = 'Sending…';
     const body = `Room: ${f.get('room')}\nSKU(s) I like: ${f.get('codes') || '(none given)'}\n\nFrom: ${f.get('name') || 'A visitor'} (${f.get('email')})`;
-    location.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('Rug styling request')}&body=${encodeURIComponent(body)}`;
-    dlg.close();
+    const ok = await sendInquiry('styling',
+      { name: f.get('name') || 'A visitor', email: f.get('email'), message: body, website: f.get('website') },
+      'Rug styling request', body + '\n\n(Please attach your room photos to this email.)', photos);
+    if (ok) form.innerHTML = thanksHTML('Thank you', 'Your request and photos have been sent. We will email options within 24 hours.');
+    else fail('We could not send that directly, so we opened your email app. Please attach your room photos there.');
   });
 })();
 
