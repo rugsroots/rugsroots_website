@@ -424,10 +424,8 @@ footer a:hover{text-decoration:underline}
     <a class="brand" href="#top" id="brandName">Rugs &amp; Roots</a>
     <nav class="nav" aria-label="Main">
       <a href="#shop">Shop all</a>
-      <a href="#browse-size">Sizes</a>
-      <a href="#browse-color">Colors</a>
       <a href="#browse-material">Materials</a>
-      <a href="/why-us.html">Why Rugs &amp; Roots</a>
+      <a href="/why-us.html">Why R&amp;R</a>
       <a href="#contact">Contact</a>
     </nav>
     <div class="head-actions">
@@ -456,23 +454,15 @@ footer a:hover{text-decoration:underline}
       <p>Browse the collection by size, color and material, then ask us about the rug you like.</p>
       <div class="hero-actions">
         <a class="btn" href="#shop">Shop all rugs</a>
-        <a class="link" href="#browse-size">Shop by size</a>
+        <a class="link" href="#browse-material">Shop by material</a>
       </div>
     </div>
     <div class="hero-floor" id="heroFloor"><div class="hero-rug" id="heroRug"></div></div>
   </section>
 
   <!-- SHOP BY -->
-  <section class="browse" aria-label="Shop by size, color and material">
+  <section class="browse" aria-label="Shop by material">
     <div class="wrap">
-      <div class="browse-row" id="browse-size">
-        <div><h2>Shop by size</h2><p class="hint">Each shape is drawn to scale.</p></div>
-        <div class="tiles" id="sizeTiles"></div>
-      </div>
-      <div class="browse-row" id="browse-color">
-        <div><h2>Shop by color</h2></div>
-        <div class="swatches" id="colorSwatches"></div>
-      </div>
       <div class="browse-row" id="browse-material">
         <div><h2>Shop by material</h2></div>
         <div class="materials" id="materialCards"></div>
@@ -1031,6 +1021,19 @@ const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)')
 let products = [];
 let byId = new Map();
 let lastSig = '';
+/* Rugs shown first, in this exact order (matched by SKU). Everything else follows:
+   Contemporary (modern) rugs low to high, then Silk rugs low to high, sold rugs last. */
+const PRIORITY_SKUS = ['313','316','332','162','156','154','301','302','303','148','147','145','306','307','305','141','136','134','308','309','310','132','126','122','333','315','335','121','111','336','324','341'];
+const PRIORITY_INDEX = new Map(PRIORITY_SKUS.map((c, i) => [c, i]));
+const priceKey = p => (p.price == null ? Infinity : p.price);
+function featuredOrder(a, b) {
+  const ia = PRIORITY_INDEX.has(String(a.sku).trim()) ? PRIORITY_INDEX.get(String(a.sku).trim()) : -1;
+  const ib = PRIORITY_INDEX.has(String(b.sku).trim()) ? PRIORITY_INDEX.get(String(b.sku).trim()) : -1;
+  if (ia >= 0 || ib >= 0) return ia < 0 ? 1 : ib < 0 ? -1 : ia - ib;
+  const grp = p => p.materials.includes('Contemporary (modern)') ? 0 : p.materials.includes('Silk') ? 1 : 2;
+  return (a.sold ? 1 : 0) - (b.sold ? 1 : 0) || grp(a) - grp(b) || priceKey(a) - priceKey(b) || a.order - b.order;
+}
+
 const state = { size: new Set(), color: new Set(), material: new Set(), q: '', sort: 'featured', savedOnly: false };
 
 let saved = new Set();
@@ -1156,13 +1159,13 @@ function matches(p) {
 function sorted(list) {
   const nullsLast = (a, b, dir) => (a == null ? 1 : b == null ? -1 : (a - b) * dir);
   const by = {
-    'featured':   (a, b) => a.order - b.order,
+    'featured':   featuredOrder,
     'price-asc':  (a, b) => nullsLast(a.price, b.price, 1),
     'price-desc': (a, b) => nullsLast(a.price, b.price, -1),
     'size-asc':   (a, b) => (areaOf(a) === areaOf(b) ? 0 : areaOf(a) < areaOf(b) ? -1 : 1),
     'size-desc':  (a, b) => (areaOf(a) === areaOf(b) ? 0 : areaOf(a) < areaOf(b) ? 1 : -1),
     'name':       (a, b) => a.name.localeCompare(b.name)
-  }[state.sort] || ((a, b) => a.order - b.order);
+  }[state.sort] || featuredOrder;
   return list.slice().sort(by);
 }
 
@@ -1187,21 +1190,6 @@ function presentColors() {
 const dotStyle = c => c === 'Multicolor' ? '' : `background:${COLOR_HEX[c] || '#B5B0A2'}`;
 
 function buildControls() {
-  const S = 5.5; // pixels per foot for the size silhouettes
-  // "Round" is left out of this homepage row entirely (not just drawn as a
-  // rectangle) — round rugs are still fully filterable from the Filters
-  // sidebar on the shop grid, this only affects the homepage tiles.
-  $('sizeTiles').innerHTML = SIZE_DEFS.filter(d => !d.round).map(d => {
-    const n = countBy.size(d.name);
-    return `<button type="button" class="tile" data-group="size" data-value="${esc(d.name)}" aria-pressed="false" ${n ? '' : 'disabled'}>
-      <span class="sil" style="--sw:${d.w * S}px;--sl:${d.l * S}px"></span>
-      <span><b>${esc(d.name)}</b><small class="note">${esc(d.note[CONFIG.sizeUnit] || d.note.ft)}</small><small>${n} ${n === 1 ? 'rug' : 'rugs'}</small></span></button>`;
-  }).join('');
-
-  $('colorSwatches').innerHTML = presentColors().map(c =>
-    `<button type="button" class="swatch" data-group="color" data-value="${esc(c)}" aria-pressed="false">
-      <span class="dot ${c === 'Multicolor' ? 'multi' : ''}" style="${dotStyle(c)}"></span><span>${esc(c)}</span><small>${countBy.color(c)}</small></button>`).join('');
-
   $('materialCards').innerHTML = MATERIALS.map(m =>
     `<button type="button" class="material" data-group="material" data-value="${esc(m)}" aria-pressed="false">
       <h3>${m}</h3><p>${esc(MATERIAL_INFO[m])}</p><small>${countBy.material(m)} ${countBy.material(m) === 1 ? 'rug' : 'rugs'}</small></button>`).join('');
