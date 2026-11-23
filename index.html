@@ -1024,7 +1024,9 @@ let lastSig = '';
 /* Rugs shown first, in this exact order (matched by SKU). Everything else follows:
    Contemporary (modern) rugs low to high, then Silk rugs low to high, sold rugs last. */
 const PRIORITY_SKUS = ['313','316','332','162','156','154','301','302','303','148','147','145','306','307','305','141','136','134','308','309','310','132','126','122','333','315','335','121','111','336','324','341'];
-const PRIORITY_INDEX = new Map(PRIORITY_SKUS.map((c, i) => [c, i]));
+// Your SKUs are written 100313, 100316 ... so each short code also matches its "100"-prefixed form.
+const PRIORITY_INDEX = new Map();
+PRIORITY_SKUS.forEach((c, i) => { PRIORITY_INDEX.set(c, i); PRIORITY_INDEX.set('100' + c, i); });
 const priceKey = p => (p.price == null ? Infinity : p.price);
 function featuredOrder(a, b) {
   const ia = PRIORITY_INDEX.has(String(a.sku).trim()) ? PRIORITY_INDEX.get(String(a.sku).trim()) : -1;
