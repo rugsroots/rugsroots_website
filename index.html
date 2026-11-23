@@ -293,10 +293,6 @@ h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.1}
 .card-media{position:relative;aspect-ratio:4/5;background:var(--stone);overflow:hidden}
 .media-btn{display:block;width:100%;height:100%;padding:0;border:0;background:none}
 .media-btn img,.media-btn svg{width:100%;height:100%;object-fit:cover}
-.media-btn{position:relative;overflow:hidden}
-.media-btn img{object-fit:contain;position:relative;z-index:1}
-.media-btn img,.detail-main img{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 5%,#000 95%,transparent),linear-gradient(to right,transparent,#000 5%,#000 95%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to bottom,transparent,#000 5%,#000 95%,transparent),linear-gradient(to right,transparent,#000 5%,#000 95%,transparent);mask-composite:intersect}
-.blur-bg{position:absolute;inset:-30px;background-size:100% 100%;background-position:center;filter:blur(40px);transform:translateZ(0)}
 .heart{position:absolute;top:10px;right:10px;width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(251,250,248,.88)}
 .heart svg,.detail .heart svg{width:19px;height:19px;fill:none;stroke:var(--ink);stroke-width:1.6}
 .heart[aria-pressed="true"] svg{fill:var(--madder);stroke:var(--madder)}
@@ -332,10 +328,8 @@ dialog.detail{width:min(1040px,94vw);max-height:92vh;padding:0;border:0;backgrou
 dialog.detail::backdrop{background:rgba(20,27,45,.58)}
 .detail-in{display:grid;grid-template-columns:1.05fr 1fr}
 .detail-media{background:var(--stone)}
-.detail-main{aspect-ratio:4/5;background:var(--stone)}
+.detail-main{aspect-ratio:4/5}
 .detail-main img,.detail-main svg{width:100%;height:100%;object-fit:cover}
-.detail-main{position:relative;overflow:hidden}
-.detail-main img{object-fit:contain;position:relative;z-index:1}
 .thumbs{display:flex;gap:8px;padding:10px;background:var(--surface)}
 .thumbs button{width:64px;height:64px;padding:0;border:1px solid var(--line);background:var(--stone);overflow:hidden}
 .thumbs button[aria-current="true"]{border-color:var(--ink)}
@@ -1064,11 +1058,7 @@ const hkHTML = p => (p.hkPrice != null && p.hkPrice > 0)
    ========================================================= */
 function mediaHTML(p, index) {
   const src = p.images[index || 0];
-  if (src) {
-    // Blurred copy of the same photo fills any space around it, so the margins blend with each photo's own colours.
-    const u = encodeURI(src).replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29');
-    return `<span class="blur-bg" style="background-image:url('${esc(u)}')"></span><img src="${esc(src)}" alt="${esc(p.name)}, ${esc(p.sizeText)} ${esc(p.materialText)} rug" loading="lazy" decoding="async" data-pid="${esc(p.id)}">`;
-  }
+  if (src) return `<img src="${esc(src)}" alt="${esc(p.name)}, ${esc(p.sizeText)} ${esc(p.materialText)} rug" loading="lazy" decoding="async" data-pid="${esc(p.id)}">`;
   return artSVG(p);
 }
 
@@ -1369,7 +1359,7 @@ document.addEventListener('error', e => {
   const img = e.target;
   if (img.tagName !== 'IMG' || !img.dataset.pid) return;
   const p = byId.get(img.dataset.pid);
-  if (p && img.parentElement) { const bg = img.previousElementSibling; if (bg && bg.classList.contains('blur-bg')) bg.remove(); img.outerHTML = artSVG(p); }
+  if (p && img.parentElement) img.outerHTML = artSVG(p);
 }, true);
 
 /* Sends a message through the Apps Script web app (it emails admin@).
